@@ -9,96 +9,22 @@ generator client {
 
 model User {
   user_id       Int      @id @default(autoincrement())
-  email     String   @unique
+  email         String   @unique
   username      String @unique
   password_hash String
   profile_image_url String?
-  
-  categories Category[]
-  posts   Post[]
-  threads Thread[]
-  votes   Vote[]
-  thread_likes ThreadLike[]
+
+
 }
 
-model Category {
-  cat_id  Int   @id @default(autoincrement())
+model Schedule {
+  schedule_id  Int   @id @default(autoincrement())
   user_id  Int    
   user     User   @relation(fields: [user_id], references: [user_id])
 
   title String
 
   post    Post[]
-}
-
-model Post {
-  post_id  Int    @id @default(autoincrement())
-  cat_id   Int
-  category Category @relation(fields: [cat_id], references: [cat_id], onDelete: Cascade)
-  user_id  Int    
-  user     User   @relation(fields: [user_id], references: [user_id])
-
-  title    String
-  comment  String
-  views    Int    @default(0)
-  
-  threads Thread[]
-  poll    Poll?
-}
-
-model Thread {
-  thread_id Int   @id @default(autoincrement())
-  post_id  Int
-  post     Post   @relation(fields: [post_id], references: [post_id], onDelete: Cascade)
-  user_id  Int    
-  user     User   @relation(fields: [user_id], references: [user_id])
-
-  comment  String
-  parent_thread_id Int?
-  parent            Thread? @relation("ThreadToParent", fields: [parent_thread_id], references: [thread_id])
-  children          Thread[] @relation("ThreadToParent")
-  
-  likes   Int @default(0)
-  thread_likes ThreadLike[]
-}
-
-model ThreadLike {
-  thread_id Int
-  thread    Thread @relation(fields: [thread_id], references: [thread_id], onDelete: Cascade)
-  user_id   Int
-  user      User   @relation(fields: [user_id], references: [user_id], onDelete: Cascade)
-  
-  @@id([thread_id, user_id])
-}
-
-model Poll {
-  poll_id Int      @id @default(autoincrement())
-  post_id  Int      @unique
-  post     Post     @relation(fields: [post_id], references: [post_id], onDelete: Cascade)
-  
-  options  Option[]
-  votes    Vote[]
-}
-
-model Option {
-  option_id Int   @id @default(autoincrement())
-  option_name String 
-  poll_id  Int
-  poll     Poll   @relation(fields: [poll_id], references: [poll_id], onDelete: Cascade)
-
-  votes Int @default(0)
-  user_votes Vote[]
-}
-
-model Vote {
-  poll_id   Int
-  poll      Poll   @relation(fields: [poll_id], references: [poll_id], onDelete: Cascade)
-  option_id Int
-  option    Option @relation(fields: [option_id], references: [option_id])
-  user_id   Int
-  user      User   @relation(fields: [user_id], references: [user_id])
-  
-  @@id([poll_id, user_id])
 }
 
 
