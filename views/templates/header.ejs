@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title><%= title %> - COMP4921 Project</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .header {
+        background: white;
+        padding: 1rem 2rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+
+      .logo {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+        text-decoration: none;
+      }
+
+      .logo:hover {
+        color: #667eea;
+      }
+
+      .nav-container {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .nav-links {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .nav-link {
+        color: #667eea;
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        transition: all 0.3s ease;
+        font-weight: 500;
+        position: relative;
+      }
+
+      .nav-link:hover {
+        background: #f0f0f0;
+        color: #5a67d8;
+      }
+
+      .nav-link.active {
+        background: #667eea;
+        color: white;
+      }
+
+      .nav-link.active:hover {
+        background: #5a67d8;
+      }
+
+      .user-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-left: 1rem;
+        padding-left: 1rem;
+        border-left: 1px solid #eee;
+      }
+
+      .welcome {
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      .logout-btn {
+        background: #dc3545;
+        color: white;
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.3s ease;
+        cursor: pointer;
+      }
+
+      .logout-btn:hover {
+        background: #c82333;
+      }
+
+      .auth-buttons {
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        color: #667eea;
+        border: 2px solid #667eea;
+      }
+
+      .btn-secondary:hover {
+        background: #667eea;
+        color: white;
+      }
+
+      .mobile-menu-toggle {
+        display: none;
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #667eea;
+        cursor: pointer;
+      }
+
+      @media (max-width: 768px) {
+        .header {
+          padding: 1rem;
+        }
+
+        .nav-links {
+          display: none;
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: white;
+          box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+          flex-direction: column;
+          padding: 1rem;
+        }
+
+        .nav-links.active {
+          display: flex;
+        }
+
+        .mobile-menu-toggle {
+          display: block;
+        }
+
+        .user-info {
+          margin-left: 0;
+          padding-left: 0;
+          border-left: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <a href="/" class="logo">COMP4921 Project</a>
+
+      <div class="nav-container">
+        <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
+          ☰
+        </button>
+
+        <div class="nav-links" id="navLinks">
+          <% if (typeof isAuthenticated !== 'undefined' && isAuthenticated) { %>
+          <!-- Authenticated user navigation -->
+          <a
+            href="/categories"
+            class="nav-link <%= currentURL.startsWith('/categories') ? 'active' : '' %>"
+            >Categories</a
+          >
+          <a
+            href="/posts"
+            class="nav-link <%= currentURL.startsWith('/posts') ? 'active' : '' %>"
+            >Posts</a
+          >
+          <a
+            href="/stats"
+            class="nav-link <%= currentURL.startsWith('/stats') ? 'active' : '' %>"
+            >Stats</a
+          >
+          <a
+            href="/my-content"
+            class="nav-link <%= currentURL === '/my-content' ? 'active' : '' %>"
+            >My Content</a
+          >
+          <% } else { %>
+          <!-- Non-authenticated user navigation -->
+          <a
+            href="/categories"
+            class="nav-link <%= currentURL.startsWith('/categories') ? 'active' : '' %>"
+            >Categories</a
+          >
+          <a
+            href="/posts"
+            class="nav-link <%= currentURL.startsWith('/posts') ? 'active' : '' %>"
+            >Posts</a
+          >
+          <a
+            href="/stats"
+            class="nav-link <%= currentURL.startsWith('/stats') ? 'active' : '' %>"
+            >Stats</a
+          >
+          <% } %>
+        </div>
+
+        <% if (typeof isAuthenticated !== 'undefined' && isAuthenticated) { %>
+        <!-- Authenticated user info -->
+        <div class="user-info">
+          <span class="welcome">Welcome, <%= currentUser.username %>!</span>
+          <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+        <% } else { %>
+        <!-- Non-authenticated user buttons -->
+        <div class="auth-buttons">
+          <a href="/login" class="btn btn-primary">Login</a>
+          <a href="/signup" class="btn btn-secondary">Sign Up</a>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <script>
+      function toggleMobileMenu() {
+        const navLinks = document.getElementById("navLinks");
+        navLinks.classList.toggle("active");
+      }
+
+      // Close mobile menu when clicking outside
+      document.addEventListener("click", function (event) {
+        const navLinks = document.getElementById("navLinks");
+        const mobileToggle = document.querySelector(".mobile-menu-toggle");
+
+        if (
+          !navLinks.contains(event.target) &&
+          !mobileToggle.contains(event.target)
+        ) {
+          navLinks.classList.remove("active");
+        }
+      });
+    </script>
+  </body>
+</html>

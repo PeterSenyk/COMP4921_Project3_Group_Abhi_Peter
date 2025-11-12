@@ -1,0 +1,33 @@
+{
+  "name": "comp4921_project2_group1_peter_abhi",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "build": "prisma generate && prisma migrate deploy",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "bcrypt": "^5.1.1",
+    "cloudinary": "^2.5.1",
+    "connect-mongo": "^5.1.0",
+    "dotenv": "^16.4.7",
+    "ejs": "^3.1.10",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "joi": "^17.13.3",
+    "multer": "^1.4.5-lts.1",
+    "prisma": "^6.17.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9"
+  }
+}

@@ -1,0 +1,61 @@
+<div
+  class="thread"
+  id="thread-<%= thread.thread_id %>"
+  style="margin-left: <%= indentLevel * 2 %>rem"
+>
+  <div class="thread-header">
+    <div class="thread-author">
+      <%= thread.user ? thread.user.username : 'Anonymous' %>
+    </div>
+    <div class="thread-actions">
+      <div class="thread-votes">
+        <button
+          class="vote-btn"
+          onclick="handleVote(<%= thread.thread_id %>, 'like')"
+          title="Like"
+        >
+          👍 <span class="likes-count"><%= thread.likes || 0 %></span>
+        </button>
+        <button
+          class="vote-btn"
+          onclick="handleVote(<%= thread.thread_id %>, 'dislike')"
+          title="Dislike"
+        >
+          👎 <span class="dislikes-count"><%= thread.dislikes || 0 %></span>
+        </button>
+      </div>
+      <button
+        class="reply-btn"
+        onclick="toggleReplyForm(<%= thread.thread_id %>)"
+      >
+        Reply
+      </button>
+    </div>
+  </div>
+  <div class="thread-content"><%= thread.comment %></div>
+
+  <!-- Reply Form -->
+  <div class="reply-form" id="reply-form-<%= thread.thread_id %>">
+    <textarea placeholder="Write your reply..."></textarea>
+    <div>
+      <button onclick="submitReply(<%= thread.thread_id %>)">
+        Submit Reply
+      </button>
+      <button
+        class="cancel-btn"
+        onclick="toggleReplyForm(<%= thread.thread_id %>)"
+      >
+        Cancel
+      </button>
+    </div>
+  </div>
+
+  <!-- Nested Threads -->
+  <% if (thread.children && thread.children.length > 0) { %>
+  <div class="thread-replies">
+    <% thread.children.forEach(child => { %> <%-
+    include('templates/thread-item', { thread: child, indentLevel: indentLevel +
+    1 }) %> <% }); %>
+  </div>
+  <% } %>
+</div>
