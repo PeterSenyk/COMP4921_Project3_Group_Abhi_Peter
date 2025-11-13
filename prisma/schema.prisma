@@ -1,5 +1,5 @@
 datasource db {
-  provider = "postgresql" // or mysql, sqlite, etc.
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -8,25 +8,152 @@ generator client {
 }
 
 model User {
-  user_id       Int      @id @default(autoincrement())
-  email         String   @unique
-  username      String @unique
-  password_hash String
+  user_id           Int             @id @default(autoincrement())
+  email             String          @unique
+  username          String          @unique
+  password_hash     String
   profile_image_url String?
 
-
+  events            Event[]
+  groupsOwned       Group[]         @relation("GroupOwner")
+  groupMemberships  UserGroup[]
+  invitesSent       EventInvite[]   @relation("EventInvitesSent")
+  invitesReceived   EventInvite[]   @relation("EventInvitesReceived")
+  friendsInitiated  Friend[]        @relation("UserFriendships1")
+  friendsReceived   Friend[]        @relation("UserFriendships2")
 }
 
-model Schedule {
-  schedule_id  Int   @id @default(autoincrement())
-  user_id  Int    
-  user     User   @relation(fields: [user_id], references: [user_id])
+model Event {
+  event_id    Int          @id @default(autoincrement())
+  user_id     Int
+  title       String
+  description String?
+  start_at    DateTime     @db.Timestamptz(6)
+  end_at      DateTime     @db.Timestamptz(6)
+  timezone    String       @default("UTC")
+  created_at  DateTime     @default(now())
+  updated_at  DateTime     @updatedAt
 
-  title String
+  user        User         @relation(fields: [user_id], references: [user_id])
+  recurrence  Recurrence?
+  invites     EventInvite[]
 
-  post    Post[]
+  @@index([user_id])
 }
 
+model Group {
+  group_id    Int        @id @default(autoincrement())
+  name        String
+  description String?
+  created_at  DateTime   @default(now())
+  owner_id    Int
 
+  owner       User       @relation("GroupOwner", fields: [owner_id], references: [user_id])
+  members     UserGroup[]
+}
 
+model UserGroup {
+  user_id   Int
+  group_id  Int
+  role      GroupRole @default(MEMBER)
+  joined_at DateTime  @default(now())
 
+  user  User  @relation(fields: [user_id], references: [user_id])
+  group Group @relation(fields: [group_id], references: [group_id])
+
+  @@id([user_id, group_id])
+  @@index([group_id])
+}
+
+model Friend {
+  user_id1 Int
+  user_id2 Int
+  since    DateTime     @default(now())
+  status   FriendStatus @default(PENDING)
+
+  user1 User @relation("UserFriendships1", fields: [user_id1], references: [user_id])
+  user2 User @relation("UserFriendships2", fields: [user_id2], references: [user_id])
+
+  @@id([user_id1, user_id2])
+  @@index([user_id1])
+  @@index([user_id2])
+}
+
+model Recurrence {
+  recurrence_id Int      @id @default(autoincrement())
+  event_id      Int      @unique
+  pattern       Reoccur
+  interval      Int      @default(1)
+  start_at      DateTime @default(now())
+  end_at        DateTime?
+
+  event Event @relation(fields: [event_id], references: [event_id])
+}
+
+model EventInvite {
+  invite_id       Int           @id @default(autoincrement())
+  event_id        Int
+  invited_user_id Int
+  invited_by_id   Int?
+  status          InviteStatus  @default(PENDING)
+  sent_at         DateTime      @default(now())
+  responded_at    DateTime?
+
+  event       Event @relation(fields: [event_id], references: [event_id])
+  invitedUser User  @relation("EventInvitesReceived", fields: [invited_user_id], references: [user_id])
+  invitedBy   User? @relation("EventInvitesSent", fields: [invited_by_id], references: [user_id])
+
+  @@unique([event_id, invited_user_id])
+  @@index([invited_user_id])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  CANCELLED
+}
+
+enum GroupRole {
+  MEMBER
+  ADMIN
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  BLOCKED
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum Month {
+  JAN
+  FEB
+  MAR
+  APR
+  MAY
+  JUN
+  JUL
+  AUG
+  SEP
+  OCT
+  NOV
+  DEC
+}
+
+enum Reoccur {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  YEARLY
+}
