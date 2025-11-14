@@ -33,10 +33,13 @@ model Event {
   timezone    String       @default("UTC")
   created_at  DateTime     @default(now())
   updated_at  DateTime     @updatedAt
+  colour      String       @default("#0000af") // default blue colour
 
   user        User         @relation(fields: [user_id], references: [user_id])
   recurrence  Recurrence?
   invites     EventInvite[]
+
+
 
   @@index([user_id])
 }
