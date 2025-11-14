@@ -73,6 +73,10 @@ web_modules/
 .env.*
 !.env.example
 
+# Google OAuth credentials
+*client_secret*.json
+client_secret*.json
+
 # parcel-bundler cache
 .cache
 .parcel-cache

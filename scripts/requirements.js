@@ -10,12 +10,11 @@ const path = require("path"); // import path module
 const joi = require("joi"); // import joi for validation
 
 // Import database service
-const databaseService = require("../services/database-service");
+const databaseService = require("../services/database-service.js");
 
 module.exports = {
   express,
   session,
-
   bcrypt,
   ejs,
   url,
