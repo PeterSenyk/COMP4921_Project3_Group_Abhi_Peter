@@ -1,0 +1,59 @@
+<%- include('templates/header') %>
+  
+<style>
+    .today {
+        background-color: #0000af;
+        color: white;
+    }
+    .muted {
+        color: #aaa;
+    }
+    .calendar-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+</style>
+    <h1><%= month %> / <%= year %></h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Sun</th>
+          <th>Mon</th>
+          <th>Tue</th>
+          <th>Wed</th>
+          <th>Thu</th>
+          <th>Fri</th>
+          <th>Sat</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% weeks.forEach(function(week) { %>
+          <tr>
+            <% week.forEach(function(day) { %>
+              <% if (!day.date) { %>
+                <td class="muted"></td>
+              <% } else { 
+                   const d = day.date.getDate();
+                   const isToday = (() => {
+                     const now = new Date();
+                     return day.date.getFullYear() === now.getFullYear() &&
+                            day.date.getMonth() === now.getMonth() &&
+                            day.date.getDate() === now.getDate();
+                   })();
+              %>
+                <td class="<%= day.isCurrentMonth ? '' : 'muted' %> <%= isToday ? 'today' : '' %>">
+                  <%= d %>
+                </td>
+              <% } %>
+            <% }) %>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </body>
+</html>
+
+<%- include('templates/footer') %>
+</body>
+</html>
