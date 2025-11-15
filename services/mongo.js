@@ -6,7 +6,6 @@ const mongodb_password = process.env.MONGODB_PASSWORD;
 const mongodb_host = process.env.MONGODB_HOST;
 const mongodb_session_secret = process.env.MONGODB_SESSION_SECRET;
 
-
 // Session expiry time (1 hour)
 const expirytime = 1000 * 60 * 60; // 1 hour in milliseconds
 const saltRounds = 12; // bcrypt salt rounds

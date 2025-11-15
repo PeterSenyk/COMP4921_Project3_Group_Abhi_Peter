@@ -14,8 +14,9 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
+
   "dependencies": {
-    "@prisma/client": "^6.16.2",
+    "@prisma/client": "^6.19.0",
     "bcrypt": "^5.1.1",
     "cloudinary": "^2.5.1",
     "connect-mongo": "^5.1.0",
@@ -25,9 +26,10 @@
     "express-session": "^1.18.1",
     "joi": "^17.13.3",
     "multer": "^1.4.5-lts.1",
-    "prisma": "^6.17.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.9",
+    "prisma": "^6.19.0",
+    "mongodb": "^6.18.0"
   }
+  
+
 }
