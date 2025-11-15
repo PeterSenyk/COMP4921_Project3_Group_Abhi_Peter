@@ -197,41 +197,36 @@
           <% if (typeof isAuthenticated !== 'undefined' && isAuthenticated) { %>
           <!-- Authenticated user navigation -->
           <a
-            href="/categories"
-            class="nav-link <%= currentURL.startsWith('/categories') ? 'active' : '' %>"
-            >Categories</a
+            href="/calendar-month"
+            class="nav-link <%= currentURL.startsWith('/calendar-month') ? 'active' : '' %>"
+            >Calendar Month</a
           >
           <a
-            href="/posts"
-            class="nav-link <%= currentURL.startsWith('/posts') ? 'active' : '' %>"
-            >Posts</a
+            href="/calendar-week"
+            class="nav-link <%= currentURL.startsWith('/calendar-week') ? 'active' : '' %>"
+            >Calendar Week</a
           >
           <a
-            href="/stats"
-            class="nav-link <%= currentURL.startsWith('/stats') ? 'active' : '' %>"
-            >Stats</a
-          >
-          <a
-            href="/my-content"
-            class="nav-link <%= currentURL === '/my-content' ? 'active' : '' %>"
-            >My Content</a
+            href="/calendar-day"
+            class="nav-link <%= currentURL.startsWith('/calendar-day') ? 'active' : '' %>"
+            >Calendar Day</a
           >
           <% } else { %>
           <!-- Non-authenticated user navigation -->
           <a
-            href="/categories"
-            class="nav-link <%= currentURL.startsWith('/categories') ? 'active' : '' %>"
-            >Categories</a
+            href="/calendar-month"
+            class="nav-link <%= currentURL.startsWith('/calendar-month') ? 'active' : '' %>"
+            >Calendar Month</a
           >
           <a
-            href="/posts"
-            class="nav-link <%= currentURL.startsWith('/posts') ? 'active' : '' %>"
-            >Posts</a
-          >
+            href="/calendar-week"
+            class="nav-link <%= currentURL.startsWith('/calendar-week') ? 'active' : '' %>"
+            >Calendar Week</a
+          > 
           <a
-            href="/stats"
-            class="nav-link <%= currentURL.startsWith('/stats') ? 'active' : '' %>"
-            >Stats</a
+              href="/calendar-day"
+            class="nav-link <%= currentURL.startsWith('/calendar-day') ? 'active' : '' %>"
+            >Calendar Day</a
           >
           <% } %>
         </div>

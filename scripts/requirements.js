@@ -15,7 +15,6 @@ const databaseService = require("../services/database-service");
 module.exports = {
   express,
   session,
-
   bcrypt,
   ejs,
   url,
