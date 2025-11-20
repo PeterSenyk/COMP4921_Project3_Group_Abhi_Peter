@@ -1,10 +1,18 @@
+const names = require("../../api/names.json");
+const { isAuthenticated, getUserFromSession } = require("../../utils/auth");
+const databaseService = require("../../services/database-service");
+
 module.exports = (app) => {
-  app.get("/calendar-week", (req, res) => {
-    // Optional: ?year=2025&month=11&day=15 (1-31)
+  app.get("/calendar-week", isAuthenticated, async (req, res) => {
     const today = new Date();
-    const year = parseInt(req.query.year) || today.getFullYear();
-    const month = parseInt(req.query.month) || today.getMonth() + 1; // 1-12
-    const day = parseInt(req.query.day) || today.getDate();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1; // 1-12
+    const day = today.getDate();
+    const user = getUserFromSession(req);
+
+    const monthName = names.monthNames[month - 1];
+    const dayName = names.dayNames[(day % 7) - 1];
+    // console.log(monthName, day);
 
     // Get the week starting from Sunday (0 = Sunday)
     const date = new Date(year, month - 1, day); // month is 0-indexed
@@ -22,7 +30,7 @@ module.exports = (app) => {
       weekDays.push({
         date: dayDate,
         dayOfMonth: dayDate.getDate(),
-        dayName: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][i],
+        dayName: names.dayNamesShort[i],
         isToday: dayDate.toDateString() === today.toDateString(),
       });
     }
@@ -37,8 +45,64 @@ module.exports = (app) => {
         hour12,
         ampm,
         display: `${hour12} ${ampm}`,
+        events: [], // Initialize empty events array for each time slot
       });
     }
+
+    // Fetch events for the current week if user is authenticated
+    let events = [];
+    // console.log("User ID: ", user.user_id);
+    if (user.user_id) {
+      try {
+        const startOfWeek = new Date(sundayDate);
+        startOfWeek.setHours(0, 0, 0, 0);
+        const endOfWeek = new Date(sundayDate);
+        endOfWeek.setDate(sundayDate.getDate() + 7);
+        endOfWeek.setHours(23, 59, 59, 999);
+
+        events = await databaseService.findEventsByUserIdAndDate(
+          req.session.userId,
+          startOfWeek
+        );
+
+        // Filter events to only include those within the week range
+        events = events.filter((event) => {
+          const eventStart = new Date(event.start_at);
+          return eventStart >= startOfWeek && eventStart < endOfWeek;
+        });
+
+        // Group events by time slot and day
+        events.forEach((event) => {
+          const eventStart = new Date(event.start_at);
+          const eventHour = eventStart.getHours();
+          const eventDay = eventStart.getDay();
+          const eventDayName = names.dayNamesShort[eventDay];
+          console.log("eventDayName: ", eventDayName);
+
+          // Find the corresponding time slot
+          const timeSlot = timeSlots.find((ts) => ts.hour24 === eventHour);
+          if (timeSlot) {
+            if (!timeSlot.events) {
+              timeSlot.events = [];
+            }
+            timeSlot.events.push({
+              ...event,
+              dayOfWeek: eventDay,
+              dayName: eventDayName,
+            });
+          }
+        });
+      } catch (error) {
+        console.error("Error fetching events:", error);
+      }
+    }
+
+    timeSlots.forEach(timeSlot => {
+      if (timeSlot.events.length > 0) {
+        console.log("timeSlot: ", timeSlot);
+      }
+    });
+  
 
     // Get timezone offset (GMT-08 for example)
     // getTimezoneOffset() returns minutes, positive when behind UTC
@@ -52,8 +116,11 @@ module.exports = (app) => {
       weekDays,
       timeSlots,
       timezoneString,
-      currentYear: year,
-      currentMonth: month,
+      year,
+      month,
+      day,
+      monthName,
+      dayName
     });
   });
 };

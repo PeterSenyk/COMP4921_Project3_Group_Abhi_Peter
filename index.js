@@ -10,6 +10,8 @@ const {
   joi,
   databaseService,
 } = require("./scripts/requirements");
+
+
 const cloudinaryService = require("./services/cloudinary-service");
 
 const port = process.env.PORT || 3000;
@@ -45,14 +47,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.set("view engine", "ejs");
 
-// Authentication middleware
-function isAuthenticated(req, res, next) {
-  if (req.session.authenticated) {
-    next();
-  } else {
-    res.redirect("/login");
-  }
-}
+
 
 // routes
 require("./scripts/routes/landing")(app);
@@ -60,8 +55,13 @@ require("./scripts/routes/signup")(app);
 require("./scripts/routes/login")(app);
 require("./scripts/routes/calendar-month")(app);
 require("./scripts/routes/calendar-week")(app);
+require("./scripts/routes/event-list")(app);
+
+
+
 
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
+

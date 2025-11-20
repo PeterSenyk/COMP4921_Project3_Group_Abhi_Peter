@@ -1,5 +1,7 @@
 const { bcrypt, databaseService } = require("../requirements");
 
+
+
 module.exports = (app) => {
   // Login GET route - show login form
   app.get("/login", (req, res) => {
@@ -49,7 +51,7 @@ module.exports = (app) => {
       // Set session
       req.session.authenticated = true;
       req.session.user = {
-        id: user.user_id,
+        user_id: user.user_id,
         username: user.username,
         email: user.email,
         profile_image_url: user.profile_image_url || null,

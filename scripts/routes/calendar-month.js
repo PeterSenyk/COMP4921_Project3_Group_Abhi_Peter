@@ -1,5 +1,8 @@
+const names = require("../../api/names.json");
+const { isAuthenticated } = require("../../utils/auth");
+
 module.exports = (app) => {
-  app.get("/calendar-month", (req, res) => {
+  app.get("/calendar-month", isAuthenticated,  (req, res) => {
     // Optional: ?year=2025&month=11 (1–12)
     const today = new Date();
     const year = parseInt(req.query.year) || today.getFullYear();

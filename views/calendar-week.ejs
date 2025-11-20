@@ -96,8 +96,18 @@
     position: relative;
   }
 
+ 
+
   .day-time-cell:hover {
     background: #f9f9f9;
+  }
+
+  .day-time-cell-has-events {
+    background: #f9f9f9;
+    min-height: 60px;
+    border-right: 1px solid #f0f0f0;
+    border-bottom: 1px solid #f0f0f0;
+    position: relative;
   }
 
   /* Empty first cell in top-left corner */
@@ -108,7 +118,10 @@
 
 <div class="calendar-week-container">
   <div class="calendar-week-header">
-    <h1>Week View</h1>
+    <h1>
+      Week of <%= dayName %> <%= weekDays[0].dayOfMonth %>, <%= monthName %> <%=
+      year %>
+    </h1>
     <div class="timezone-indicator"><%= timezoneString %></div>
   </div>
 
@@ -134,14 +147,38 @@
     <!-- Day cells for this time slot -->
     <% weekDays.forEach(function(day) { %>
     <div
-      class="day-time-cell"
+      data-slot="<%= JSON.stringify(timeSlot) %>"
+      data-event="<%= JSON.stringify(timeSlot.events[0]) %>"
+      <% if (timeSlot.events && timeSlot.events.length > 0) { %>
+        class="day-time-cell-has-events"
+      <% } else { %>
+        class="day-time-cell"
+      <% } %>
+
       data-day="<%= day.dayOfMonth %>"
       data-hour="<%= timeSlot.hour24 %>"
+      data-day-name="<%= day.dayName %>"
+      
     >
       <!-- Events will be rendered here later -->
     </div>
     <% }); %> <% }); %>
   </div>
 </div>
+
+<script>
+  const dayTimeCells = document.querySelectorAll('.day-time-cell-has-events');
+  dayTimeCells.forEach(dayTimeCell => {
+    const timeSlot = JSON.parse(dayTimeCell.dataset.slot);
+    const event = dayTimeCell.dataset.event;
+    const day = dayTimeCell.dataset.day;
+    const hour = dayTimeCell.dataset.hour;
+    const dayName = dayTimeCell.dataset.dayName;
+    console.log("timeSlot: ", timeSlot.events[0].dayName, "\ndayName: ", dayName, "\nhour: ", hour);
+    if (dayName == timeSlot.events[0].dayName && hour == timeSlot.hour24) {
+      dayTimeCell.style.backgroundColor = timeSlot.events[0].colour;
+    }
+  });
+</script>
 
 <%- include('templates/footer') %>
