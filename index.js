@@ -56,6 +56,7 @@ require("./scripts/routes/login")(app);
 require("./scripts/routes/calendar-month")(app);
 require("./scripts/routes/calendar-week")(app);
 require("./scripts/routes/event-list")(app);
+require("./scripts/routes/fullcallendartest")(app);
 
 
 
