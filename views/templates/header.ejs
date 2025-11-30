@@ -110,13 +110,14 @@
       }
 
       .btn {
-        padding: 0.5rem 1rem;
+        padding: 0.625rem 1.5rem;
         border: none;
         border-radius: 5px;
         text-decoration: none;
         font-weight: 500;
         transition: all 0.3s ease;
         cursor: pointer;
+        display: inline-block;
       }
 
       .btn-primary {
@@ -204,24 +205,27 @@
           <!-- Authenticated user navigation -->
           <a
             href="/calendar"
-            class="nav-link <%= currentURL.startsWith('/calendar') ? 'active' : '' %>"
+            class="nav-link <%= typeof currentURL !== 'undefined' && currentURL.startsWith('/calendar') ? 'active' : '' %>"
             >Calendar</a
           >
 
           <a
             href="/friends"
-            class="nav-link <%= currentURL.startsWith('/friends') ? 'active' : '' %>"
+            class="nav-link <%= typeof currentURL !== 'undefined' && currentURL.startsWith('/friends') ? 'active' : '' %>"
             >Friends</a
           >
 
           <% } else { %>
           <!-- Non-authenticated user navigation -->
+          <% const hideNavOnAuthPages = typeof currentURL !== 'undefined' &&
+          (currentURL.startsWith('/login') || currentURL.startsWith('/signup'));
+          %> <% if (!hideNavOnAuthPages) { %>
           <a
             href="/calendar"
-            class="nav-link <%= currentURL.startsWith('/calendar') ? 'active' : '' %>"
+            class="nav-link <%= typeof currentURL !== 'undefined' && currentURL.startsWith('/calendar') ? 'active' : '' %>"
             >Calendar</a
           >
-          <% } %>
+          <% } %> <% } %>
         </div>
 
         <% if (typeof isAuthenticated !== 'undefined' && isAuthenticated) { %>

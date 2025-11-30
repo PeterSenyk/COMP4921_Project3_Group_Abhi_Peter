@@ -1,7 +1,5 @@
 const { bcrypt, databaseService } = require("../requirements");
 
-
-
 module.exports = (app) => {
   // Login GET route - show login form
   app.get("/login", (req, res) => {
@@ -12,6 +10,8 @@ module.exports = (app) => {
     res.render("login", {
       title: "Login",
       error: null,
+      isAuthenticated: false,
+      currentURL: req.url,
     });
   });
 
@@ -23,6 +23,8 @@ module.exports = (app) => {
       return res.render("login", {
         title: "Login",
         error: "Username and password are required",
+        isAuthenticated: false,
+        currentURL: req.url,
       });
     }
 
@@ -33,6 +35,8 @@ module.exports = (app) => {
         return res.render("login", {
           title: "Login",
           error: "Invalid username or password",
+          isAuthenticated: false,
+          currentURL: req.url,
         });
       }
 
@@ -45,6 +49,8 @@ module.exports = (app) => {
         return res.render("login", {
           title: "Login",
           error: "Invalid username or password",
+          isAuthenticated: false,
+          currentURL: req.url,
         });
       }
 
@@ -63,6 +69,8 @@ module.exports = (app) => {
       res.render("login", {
         title: "Login",
         error: "An error occurred. Please try again.",
+        isAuthenticated: false,
+        currentURL: req.url,
       });
     }
   });

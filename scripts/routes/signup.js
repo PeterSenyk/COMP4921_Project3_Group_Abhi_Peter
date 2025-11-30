@@ -7,6 +7,8 @@ module.exports = (app) => {
       title: "Sign Up",
       error: null,
       success: null,
+      isAuthenticated: false,
+      currentURL: req.url,
     });
   });
 
@@ -17,6 +19,8 @@ module.exports = (app) => {
       return res.render("signup", {
         title: "Sign Up",
         error: "All fields are required",
+        isAuthenticated: false,
+        currentURL: req.url,
       });
     }
 
@@ -26,6 +30,8 @@ module.exports = (app) => {
         error: "Passwords do not match",
         username,
         email,
+        isAuthenticated: false,
+        currentURL: req.url,
       });
     }
 
@@ -53,6 +59,8 @@ module.exports = (app) => {
       return res.render("signup", {
         title: "Sign Up",
         error: validation.error.details[0].message,
+        isAuthenticated: false,
+        currentURL: req.url,
       });
     }
 
@@ -66,6 +74,8 @@ module.exports = (app) => {
         return res.render("signup", {
           title: "Sign Up",
           error: "Username or email already exists",
+          isAuthenticated: false,
+          currentURL: req.url,
         });
       }
 
@@ -85,12 +95,16 @@ module.exports = (app) => {
       return res.render("login", {
         title: "Login",
         success: "Account created successfully",
+        isAuthenticated: false,
+        currentURL: "/login",
       });
     } catch (error) {
       console.error("Error creating user:", error);
       return res.render("signup", {
         title: "Sign Up",
         error: "An error occurred. Please try again.",
+        isAuthenticated: false,
+        currentURL: req.url,
       });
     }
   });
