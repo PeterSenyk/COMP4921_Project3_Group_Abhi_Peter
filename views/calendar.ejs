@@ -581,6 +581,223 @@
     border-bottom: 2px solid #e0e0e0;
   }
 
+  .friends-sidebar-btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+  }
+
+  .friends-sidebar-btn-primary:hover {
+    background: linear-gradient(135deg, #5641c8 0%, #4a3784 100%);
+  }
+
+  /* Availability Modal Styles */
+  .availability-modal {
+    display: none;
+    position: fixed;
+    z-index: 10002;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+  }
+
+  .availability-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .availability-modal-content {
+    background-color: white;
+    margin: auto;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 900px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideDown 0.3s;
+    position: relative;
+  }
+
+  .availability-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .availability-modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+
+  .availability-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s;
+  }
+
+  .availability-modal-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+
+  .availability-modal-body {
+    margin-bottom: 1.5rem;
+  }
+
+  .availability-date-range {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
+  .availability-date-input-group {
+    flex: 1;
+    min-width: 200px;
+  }
+
+  .availability-date-label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+  }
+
+  .availability-date-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-family: inherit;
+  }
+
+  .availability-date-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .availability-load-btn {
+    padding: 0.75rem 1.5rem;
+    background-color: #667eea;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+    white-space: nowrap;
+  }
+
+  .availability-load-btn:hover {
+    background-color: #5a67d8;
+  }
+
+  .availability-load-btn:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  .availability-section {
+    margin-bottom: 2rem;
+  }
+
+  .availability-section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .availability-time-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .availability-time-item {
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 5px;
+    border-left: 4px solid;
+  }
+
+  .availability-time-item.busy {
+    background-color: #fff5f5;
+    border-left-color: #dc3545;
+  }
+
+  .availability-time-item.free {
+    background-color: #f0fff4;
+    border-left-color: #28a745;
+  }
+
+  .availability-time-range {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.25rem;
+  }
+
+  .availability-time-details {
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .availability-time-friend {
+    font-weight: 500;
+    color: #667eea;
+  }
+
+  .availability-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
+  }
+
+  .availability-loading {
+    text-align: center;
+    padding: 2rem;
+    color: #667eea;
+  }
+
+  .availability-error {
+    text-align: center;
+    padding: 1rem;
+    color: #dc3545;
+    background-color: #fff5f5;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+  }
+
   .friends-sidebar-btn:hover {
     background: #667eea;
     color: white;
@@ -681,6 +898,12 @@
       </button>
       <button class="friends-sidebar-btn" onclick="deselectAllFriends()">
         Deselect All
+      </button>
+      <button
+        class="friends-sidebar-btn friends-sidebar-btn-primary"
+        onclick="showAvailabilityModal()"
+      >
+        View Availability
       </button>
     </div>
     <div class="friends-filter-section">
@@ -1019,6 +1242,124 @@
   </div>
 </div>
 
+<!-- Availability Modal -->
+<div id="availabilityModal" class="availability-modal">
+  <div class="availability-modal-content">
+    <div class="availability-modal-header">
+      <h2 class="availability-modal-title">Friends' Availability</h2>
+      <button
+        class="availability-modal-close"
+        onclick="closeAvailabilityModal()"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="availability-modal-body">
+      <div class="availability-date-range">
+        <div class="availability-date-input-group">
+          <label for="availabilityStartDate" class="availability-date-label">
+            Start Date
+          </label>
+          <input
+            type="date"
+            id="availabilityStartDate"
+            class="availability-date-input"
+            required
+          />
+        </div>
+        <div class="availability-date-input-group">
+          <label for="availabilityEndDate" class="availability-date-label">
+            End Date
+          </label>
+          <input
+            type="date"
+            id="availabilityEndDate"
+            class="availability-date-input"
+            required
+          />
+        </div>
+        <button
+          class="availability-load-btn"
+          onclick="loadAvailability()"
+          id="loadAvailabilityBtn"
+        >
+          Load Availability
+        </button>
+      </div>
+      <div
+        id="availabilityError"
+        class="availability-error"
+        style="display: none"
+      ></div>
+      <div id="availabilityContent">
+        <div class="availability-empty">
+          Select a date range and click "Load Availability" to see when your
+          friends are free or busy.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Availability Modal -->
+<div id="availabilityModal" class="availability-modal">
+  <div class="availability-modal-content">
+    <div class="availability-modal-header">
+      <h2 class="availability-modal-title">Friends' Availability</h2>
+      <button
+        class="availability-modal-close"
+        onclick="closeAvailabilityModal()"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="availability-modal-body">
+      <div class="availability-date-range">
+        <div class="availability-date-input-group">
+          <label for="availabilityStartDate" class="availability-date-label">
+            Start Date
+          </label>
+          <input
+            type="date"
+            id="availabilityStartDate"
+            class="availability-date-input"
+            required
+          />
+        </div>
+        <div class="availability-date-input-group">
+          <label for="availabilityEndDate" class="availability-date-label">
+            End Date
+          </label>
+          <input
+            type="date"
+            id="availabilityEndDate"
+            class="availability-date-input"
+            required
+          />
+        </div>
+        <button
+          class="availability-load-btn"
+          onclick="loadAvailability()"
+          id="loadAvailabilityBtn"
+        >
+          Load Availability
+        </button>
+      </div>
+      <div
+        id="availabilityError"
+        class="availability-error"
+        style="display: none"
+      ></div>
+      <div id="availabilityContent">
+        <div class="availability-empty">
+          Select a date range and click "Load Availability" to see when your
+          friends are free or busy.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
 <script>
   // Pass events data to the calendar utils script
@@ -1312,6 +1653,209 @@
   // Load friends when page loads
   document.addEventListener("DOMContentLoaded", function () {
     loadFriends();
+  });
+
+  // Availability Modal Functions
+  window.showAvailabilityModal = function () {
+    const modal = document.getElementById("availabilityModal");
+    if (modal) {
+      modal.classList.add("show");
+      // Set default date range (today to 7 days from now)
+      const today = new Date();
+      const nextWeek = new Date(today);
+      nextWeek.setDate(nextWeek.getDate() + 7);
+
+      document.getElementById("availabilityStartDate").value = today
+        .toISOString()
+        .split("T")[0];
+      document.getElementById("availabilityEndDate").value = nextWeek
+        .toISOString()
+        .split("T")[0];
+    }
+  };
+
+  window.closeAvailabilityModal = function () {
+    const modal = document.getElementById("availabilityModal");
+    if (modal) {
+      modal.classList.remove("show");
+    }
+  };
+
+  // Format date and time for display
+  function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
+
+  // Format time range for display
+  function formatTimeRange(start, end) {
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+    const sameDay = startDate.toDateString() === endDate.toDateString();
+
+    if (sameDay) {
+      return `${formatDateTime(start)} - ${endDate.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      })}`;
+    } else {
+      return `${formatDateTime(start)} - ${formatDateTime(end)}`;
+    }
+  }
+
+  // Load availability data
+  window.loadAvailability = async function () {
+    const startDateInput = document.getElementById("availabilityStartDate");
+    const endDateInput = document.getElementById("availabilityEndDate");
+    const errorDiv = document.getElementById("availabilityError");
+    const contentDiv = document.getElementById("availabilityContent");
+    const loadBtn = document.getElementById("loadAvailabilityBtn");
+
+    // Validate inputs
+    if (!startDateInput.value || !endDateInput.value) {
+      errorDiv.textContent = "Please select both start and end dates";
+      errorDiv.style.display = "block";
+      return;
+    }
+
+    const startDate = new Date(startDateInput.value);
+    const endDate = new Date(endDateInput.value);
+
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      errorDiv.textContent = "Invalid date format";
+      errorDiv.style.display = "block";
+      return;
+    }
+
+    if (startDate >= endDate) {
+      errorDiv.textContent = "Start date must be before end date";
+      errorDiv.style.display = "block";
+      return;
+    }
+
+    // Check if any friends are selected
+    if (selectedFriendIds.size === 0) {
+      errorDiv.textContent =
+        "Please select at least one friend to view availability";
+      errorDiv.style.display = "block";
+      return;
+    }
+
+    // Hide error, show loading
+    errorDiv.style.display = "none";
+    loadBtn.disabled = true;
+    loadBtn.textContent = "Loading...";
+    contentDiv.innerHTML =
+      '<div class="availability-loading">Loading availability...</div>';
+
+    try {
+      const friendIdsArray = Array.from(selectedFriendIds);
+      const friendIdsParam = friendIdsArray.join(",");
+      const startParam = startDate.toISOString();
+      const endParam = endDate.toISOString();
+
+      const response = await fetch(
+        `/api/friends/availability?friendIds=${friendIdsParam}&start=${startParam}&end=${endParam}`
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to fetch availability");
+      }
+
+      const availability = await response.json();
+
+      // Display availability data
+      let html = "";
+
+      // Busy Times Section
+      if (availability.busyTimes && availability.busyTimes.length > 0) {
+        html += '<div class="availability-section">';
+        html += '<h3 class="availability-section-title">Busy Times</h3>';
+        html += '<ul class="availability-time-list">';
+
+        availability.busyTimes.forEach((busyTime) => {
+          html += '<li class="availability-time-item busy">';
+          html += `<div class="availability-time-range">${formatTimeRange(
+            busyTime.start,
+            busyTime.end
+          )}</div>`;
+          html += `<div class="availability-time-details">`;
+          html += `<span class="availability-time-friend">${
+            busyTime.friendName || "Unknown"
+          }</span>`;
+          if (busyTime.eventTitle) {
+            html += ` - ${busyTime.eventTitle}`;
+          }
+          html += `</div>`;
+          html += `</li>`;
+        });
+
+        html += "</ul>";
+        html += "</div>";
+      } else {
+        html += '<div class="availability-section">';
+        html += '<h3 class="availability-section-title">Busy Times</h3>';
+        html +=
+          '<div class="availability-empty">No busy times found in this date range</div>';
+        html += "</div>";
+      }
+
+      // Free Times Section
+      if (availability.freeTimes && availability.freeTimes.length > 0) {
+        html += '<div class="availability-section">';
+        html += '<h3 class="availability-section-title">Free Times</h3>';
+        html += '<ul class="availability-time-list">';
+
+        availability.freeTimes.forEach((freeTime) => {
+          html += '<li class="availability-time-item free">';
+          html += `<div class="availability-time-range">${formatTimeRange(
+            freeTime.start,
+            freeTime.end
+          )}</div>`;
+          html += `<div class="availability-time-details">All selected friends are available</div>`;
+          html += `</li>`;
+        });
+
+        html += "</ul>";
+        html += "</div>";
+      } else {
+        html += '<div class="availability-section">';
+        html += '<h3 class="availability-section-title">Free Times</h3>';
+        html +=
+          '<div class="availability-empty">No free times found in this date range</div>';
+        html += "</div>";
+      }
+
+      contentDiv.innerHTML = html;
+    } catch (error) {
+      console.error("Error loading availability:", error);
+      errorDiv.textContent =
+        error.message || "Failed to load availability. Please try again.";
+      errorDiv.style.display = "block";
+      contentDiv.innerHTML =
+        '<div class="availability-empty">Error loading availability</div>';
+    } finally {
+      loadBtn.disabled = false;
+      loadBtn.textContent = "Load Availability";
+    }
+  };
+
+  // Close modal when clicking outside
+  document.addEventListener("click", function (event) {
+    const modal = document.getElementById("availabilityModal");
+    if (event.target === modal) {
+      closeAvailabilityModal();
+    }
   });
 </script>
 
