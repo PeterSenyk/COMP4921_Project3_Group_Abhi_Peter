@@ -7,7 +7,7 @@ module.exports = (app) => {
   app.get("/login", (req, res) => {
     if (req.session.authenticated) {
       console.log("Already authenticated, redirecting to dashboard");
-      return res.redirect("/calendar-month");
+      return res.redirect("/calendar");
     }
     res.render("login", {
       title: "Login",
@@ -57,7 +57,7 @@ module.exports = (app) => {
         profile_image_url: user.profile_image_url || null,
       };
 
-      res.redirect("/calendar-month");
+      res.redirect("/calendar");
     } catch (error) {
       console.error("Login error:", error);
       res.render("login", {

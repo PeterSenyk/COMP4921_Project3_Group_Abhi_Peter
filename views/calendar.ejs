@@ -1,0 +1,762 @@
+<%- include('templates/header') %>
+
+<link
+  href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.css"
+  rel="stylesheet"
+/>
+
+<style>
+  .calendar-container {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  #calendar {
+    max-width: 100%;
+    margin: 0 auto;
+  }
+
+  /* Custom FullCalendar styling */
+  .fc-toolbar-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  .fc-button {
+    background-color: #667eea;
+    border-color: #667eea;
+  }
+
+  .fc-button:hover {
+    background-color: #5a67d8;
+    border-color: #5a67d8;
+  }
+
+  .fc-button-active {
+    background-color: #5a67d8;
+    border-color: #5a67d8;
+  }
+
+  .fc-day-today {
+    background-color: #f0f4ff !important;
+  }
+
+  .fc-timeGridDay-view .fc-day-today,
+  .fc-timeGridWeek-view .fc-day-today {
+    background-color: #f0f4ff !important;
+  }
+
+  .fc-event {
+    cursor: pointer;
+  }
+
+  .fc-event:hover {
+    opacity: 0.8;
+  }
+
+  /* Event Modal Styles */
+  .event-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+  }
+
+  .event-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .event-modal-content {
+    background-color: white;
+    margin: auto;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 90%;
+    animation: slideDown 0.3s;
+    position: relative;
+  }
+
+  @keyframes slideDown {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .event-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .event-modal-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+
+  .event-modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s;
+  }
+
+  .event-modal-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+
+  .event-modal-body {
+    margin-bottom: 1.5rem;
+  }
+
+  .event-modal-field {
+    margin-bottom: 1rem;
+  }
+
+  .event-modal-label {
+    font-weight: 600;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+    display: block;
+  }
+
+  .event-modal-value {
+    color: #333;
+    font-size: 1rem;
+  }
+
+  .event-modal-description {
+    color: #666;
+    font-style: italic;
+    min-height: 1.5rem;
+  }
+
+  .event-modal-footer {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .event-modal-btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 0.9rem;
+  }
+
+  .event-modal-btn-close {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .event-modal-btn-close:hover {
+    background-color: #5a6268;
+  }
+
+  .event-modal-btn-edit {
+    background-color: #667eea;
+    color: white;
+  }
+
+  .event-modal-btn-edit:hover {
+    background-color: #5a67d8;
+  }
+
+  .event-modal-btn-delete {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .event-modal-btn-delete:hover {
+    background-color: #c82333;
+  }
+
+  /* Event Form Modal Styles */
+  .event-form-modal {
+    display: none;
+    position: fixed;
+    z-index: 10001;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s;
+  }
+
+  .event-form-modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .event-form-modal-content {
+    background-color: white;
+    margin: auto;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideDown 0.3s;
+    position: relative;
+  }
+
+  .event-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .event-form-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+
+  .event-form-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.3s;
+  }
+
+  .event-form-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+
+  .event-form-body {
+    margin-bottom: 1.5rem;
+  }
+
+  .event-form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .event-form-label {
+    display: block;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+  }
+
+  .event-form-label.required::after {
+    content: " *";
+    color: #dc3545;
+  }
+
+  .event-form-input,
+  .event-form-textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+  }
+
+  .event-form-input:focus,
+  .event-form-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .event-form-textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+
+  .event-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  @media (max-width: 600px) {
+    .event-form-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .event-form-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .event-form-checkbox {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+
+  .event-form-footer {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .event-form-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-size: 1rem;
+  }
+
+  .event-form-btn-cancel {
+    background-color: #6c757d;
+    color: white;
+  }
+
+  .event-form-btn-cancel:hover {
+    background-color: #5a6268;
+  }
+
+  .event-form-btn-submit {
+    background-color: #667eea;
+    color: white;
+  }
+
+  .event-form-btn-submit:hover {
+    background-color: #5a67d8;
+  }
+
+  .event-form-btn-submit:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+
+  .event-form-error {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: none;
+  }
+
+  .event-form-error.show {
+    display: block;
+  }
+
+  .event-form-colour-picker {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .event-form-colour-options {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .event-form-colour-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .event-form-colour-option:hover {
+    transform: scale(1.1);
+    border-color: #333;
+  }
+
+  .event-form-colour-option.selected {
+    border-color: #333;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2);
+  }
+
+  .event-form-colour-option input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+  }
+</style>
+
+<div class="calendar-container">
+  <div id="calendar"></div>
+</div>
+
+<!-- Event Details Modal -->
+<div id="eventModal" class="event-modal">
+  <div class="event-modal-content">
+    <div class="event-modal-header">
+      <h2 class="event-modal-title" id="modalEventTitle">Event Details</h2>
+      <button class="event-modal-close" onclick="closeEventModal()">
+        &times;
+      </button>
+    </div>
+    <div class="event-modal-body">
+      <div class="event-modal-field">
+        <span class="event-modal-label">Start Time:</span>
+        <div class="event-modal-value" id="modalEventStart"></div>
+      </div>
+      <div class="event-modal-field">
+        <span class="event-modal-label">End Time:</span>
+        <div class="event-modal-value" id="modalEventEnd"></div>
+      </div>
+      <div class="event-modal-field">
+        <span class="event-modal-label">Description:</span>
+        <div
+          class="event-modal-value event-modal-description"
+          id="modalEventDescription"
+        >
+          No description provided
+        </div>
+      </div>
+    </div>
+    <div class="event-modal-footer">
+      <button
+        class="event-modal-btn event-modal-btn-close"
+        onclick="closeEventModal()"
+      >
+        Close
+      </button>
+      <button
+        class="event-modal-btn event-modal-btn-edit"
+        id="modalEditBtn"
+        onclick="editEventFromModal()"
+      >
+        Edit
+      </button>
+      <button
+        class="event-modal-btn event-modal-btn-delete"
+        id="modalDeleteBtn"
+        onclick="deleteEventFromModal()"
+      >
+        Delete
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Event Form Modal (Create/Edit) -->
+<div id="eventFormModal" class="event-form-modal">
+  <div class="event-form-modal-content">
+    <div class="event-form-header">
+      <h2 class="event-form-title" id="formModalTitle">Create Event</h2>
+      <button class="event-form-close" onclick="closeEventFormModal()">
+        &times;
+      </button>
+    </div>
+    <form id="eventForm" onsubmit="handleEventFormSubmit(event)">
+      <div class="event-form-body">
+        <div class="event-form-group">
+          <label for="eventTitle" class="event-form-label required"
+            >Title</label
+          >
+          <input
+            type="text"
+            id="eventTitle"
+            name="title"
+            class="event-form-input"
+            required
+            placeholder="Enter event title"
+          />
+          <div class="event-form-error" id="titleError"></div>
+        </div>
+
+        <div class="event-form-row">
+          <div class="event-form-group">
+            <label for="eventStart" class="event-form-label required"
+              >Start Date & Time</label
+            >
+            <input
+              type="datetime-local"
+              id="eventStart"
+              name="start"
+              class="event-form-input"
+              required
+            />
+            <div class="event-form-error" id="startError"></div>
+          </div>
+
+          <div class="event-form-group">
+            <label for="eventEnd" class="event-form-label required"
+              >End Date & Time</label
+            >
+            <input
+              type="datetime-local"
+              id="eventEnd"
+              name="end"
+              class="event-form-input"
+              required
+            />
+            <div class="event-form-error" id="endError"></div>
+          </div>
+        </div>
+
+        <div class="event-form-group">
+          <label for="eventDescription" class="event-form-label"
+            >Description</label
+          >
+          <textarea
+            id="eventDescription"
+            name="description"
+            class="event-form-textarea"
+            placeholder="Enter event description (optional)"
+          ></textarea>
+        </div>
+
+        <div class="event-form-group">
+          <div class="event-form-checkbox-group">
+            <input
+              type="checkbox"
+              id="eventAllDay"
+              name="allDay"
+              class="event-form-checkbox"
+            />
+            <label for="eventAllDay" class="event-form-label" style="margin: 0">
+              All Day Event
+            </label>
+          </div>
+        </div>
+
+        <div class="event-form-group">
+          <label class="event-form-label">Colour</label>
+          <div class="event-form-colour-picker">
+            <div class="event-form-colour-options" id="colourOptions">
+              <div
+                class="event-form-colour-option"
+                data-colour="#0000af"
+                style="background-color: #0000af"
+                title="Blue"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#0000af"
+                  id="colour-blue"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#dc3545"
+                style="background-color: #dc3545"
+                title="Red"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#dc3545"
+                  id="colour-red"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#28a745"
+                style="background-color: #28a745"
+                title="Green"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#28a745"
+                  id="colour-green"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#ffc107"
+                style="background-color: #ffc107"
+                title="Yellow"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#ffc107"
+                  id="colour-yellow"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#17a2b8"
+                style="background-color: #17a2b8"
+                title="Cyan"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#17a2b8"
+                  id="colour-cyan"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#6f42c1"
+                style="background-color: #6f42c1"
+                title="Purple"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#6f42c1"
+                  id="colour-purple"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#fd7e14"
+                style="background-color: #fd7e14"
+                title="Orange"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#fd7e14"
+                  id="colour-orange"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#e83e8c"
+                style="background-color: #e83e8c"
+                title="Pink"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#e83e8c"
+                  id="colour-pink"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#20c997"
+                style="background-color: #20c997"
+                title="Teal"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#20c997"
+                  id="colour-teal"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#6c757d"
+                style="background-color: #6c757d"
+                title="Gray"
+              >
+                <input
+                  type="radio"
+                  name="colour"
+                  value="#6c757d"
+                  id="colour-gray"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="event-form-footer">
+        <button
+          type="button"
+          class="event-form-btn event-form-btn-cancel"
+          onclick="closeEventFormModal()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="event-form-btn event-form-btn-submit"
+          id="formSubmitBtn"
+        >
+          Create Event
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.19/index.global.min.js"></script>
+<script>
+  // Pass events data to the calendar utils script
+  window.initialEventsData = <%- events %>;
+</script>
+<script src="/utils/calendar-utils.js"></script>
+
+<%- include('templates/footer') %>

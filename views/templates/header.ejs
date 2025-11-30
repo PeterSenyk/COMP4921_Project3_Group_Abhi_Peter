@@ -197,36 +197,16 @@
           <% if (typeof isAuthenticated !== 'undefined' && isAuthenticated) { %>
           <!-- Authenticated user navigation -->
           <a
-            href="/calendar-month"
-            class="nav-link <%= currentURL.startsWith('/calendar-month') ? 'active' : '' %>"
-            >Calendar Month</a
-          >
-          <a
-            href="/calendar-week"
-            class="nav-link <%= currentURL.startsWith('/calendar-week') ? 'active' : '' %>"
-            >Calendar Week</a
-          >
-          <a
-            href="/calendar-day"
-            class="nav-link <%= currentURL.startsWith('/calendar-day') ? 'active' : '' %>"
-            >Calendar Day</a
+            href="/calendar"
+            class="nav-link <%= currentURL.startsWith('/calendar') ? 'active' : '' %>"
+            >Calendar</a
           >
           <% } else { %>
           <!-- Non-authenticated user navigation -->
           <a
-            href="/calendar-month"
-            class="nav-link <%= currentURL.startsWith('/calendar-month') ? 'active' : '' %>"
-            >Calendar Month</a
-          >
-          <a
-            href="/calendar-week"
-            class="nav-link <%= currentURL.startsWith('/calendar-week') ? 'active' : '' %>"
-            >Calendar Week</a
-          > 
-          <a
-              href="/calendar-day"
-            class="nav-link <%= currentURL.startsWith('/calendar-day') ? 'active' : '' %>"
-            >Calendar Day</a
+            href="/calendar"
+            class="nav-link <%= currentURL.startsWith('/calendar') ? 'active' : '' %>"
+            >Calendar</a
           >
           <% } %>
         </div>
