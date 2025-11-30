@@ -28,6 +28,15 @@ class DatabaseService {
     });
   }
 
+  // find user by id
+  async findUserById(userId) {
+    return await prisma.user.findUnique({
+      where: {
+        user_id: userId
+      }
+    });
+  }
+
   // create event
   async createEvent(event) {
     return await prisma.event.create({
@@ -100,6 +109,82 @@ class DatabaseService {
       },
     });
   }
+
+  // add friend
+  async addFriend(userId, friendId) {
+    return await prisma.friend.create({
+      data: {
+        user_id1: userId,
+        user_id2: friendId,
+        status: "ACCEPTED",
+        since: new Date(),
+      },
+    });
+  }
+
+  // get friends
+  async getFriends(userId) {
+    return await prisma.friend.findMany({
+      where: {
+      OR : [
+        { user_id1: userId },
+        { user_id2: userId }
+      ]
+    }
+    });
+  }
+
+  // get friend requests
+  async getFriendRequests(userId) {
+    return await prisma.friend.findMany({
+      where: {
+        user_id2: userId,
+      },
+    });
+  }
+
+  // send friend request
+  async sendFriendRequest(userId, friendId) {
+    return await prisma.friend.create({
+      data: {
+        user_id1: userId,
+        user_id2: friendId,
+      },
+    });
+  }
+
+  // accept friend request
+  async acceptFriendRequest(userId, friendId) {
+    return await prisma.friend.update({
+      where: {
+        user_id1: userId,
+        user_id2: friendId,
+      },
+    });
+  }
+
+  // reject friend request
+  async rejectFriendRequest(userId, friendId) {
+    return await prisma.friend.update({
+      where: {
+        user_id1: userId,
+        user_id2: friendId,
+      },
+    });
+  }
+
+  // delete friend
+  async deleteFriend(userId, friendId) {
+    return await prisma.friend.delete({
+      where: {
+        user_id1: userId,
+        user_id2: friendId,
+      },
+    });
+  }
+
+
+
 }
 
 module.exports = new DatabaseService();

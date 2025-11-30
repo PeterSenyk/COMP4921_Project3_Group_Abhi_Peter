@@ -53,9 +53,8 @@ require("./scripts/routes/landing")(app);
 require("./scripts/routes/signup")(app);
 require("./scripts/routes/login")(app);
 require("./scripts/routes/calendar")(app);
-require("./scripts/routes/event-list")(app);
-require("./scripts/routes/fullcallendartest")(app);
 require("./scripts/routes/logout")(app);
+require("./scripts/routes/friends")(app);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

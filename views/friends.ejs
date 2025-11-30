@@ -1,0 +1,26 @@
+<%- include('templates/header') %>
+
+
+<style>
+    .friends-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+    }
+</style>
+
+
+<div class="friends-container">
+    <h1>Friends</h1>
+    <ul>
+        <% friends.forEach(friend => { %>
+            <li><%= friend.username %></li>
+        <% }); %>
+    </ul>
+</div>
+
+
+
+
+
+<%- include('templates/footer') %>
