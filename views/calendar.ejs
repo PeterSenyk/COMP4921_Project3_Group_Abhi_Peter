@@ -453,10 +453,277 @@
     margin: 0;
     cursor: pointer;
   }
+
+  /* Friend event styling (applied via eventDidMount) */
+  .fc-event.friend-event {
+    opacity: 0.8 !important;
+    border-left: 6px solid !important;
+    border-left-color: inherit !important;
+    box-shadow: -2px 0 4px rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .fc-event.friend-event:hover {
+    opacity: 0.9 !important;
+    box-shadow: -3px 0 6px rgba(0, 0, 0, 0.2) !important;
+  }
+
+  /* Friends Legend Styles */
+
+  /* Friends Sidebar Styles */
+  .calendar-wrapper {
+    display: flex;
+    gap: 1.5rem;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 2rem;
+  }
+
+  .friends-sidebar {
+    width: 280px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    height: fit-content;
+    position: sticky;
+    top: 100px;
+  }
+
+  .friends-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .friends-sidebar-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+  }
+
+  .friends-sidebar-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #667eea;
+    cursor: pointer;
+    padding: 0.25rem;
+    display: none;
+  }
+
+  .friends-sidebar-controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-direction: column;
+  }
+
+  .friends-sidebar-btn {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #667eea;
+    border-radius: 5px;
+    background: white;
+    color: #667eea;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.85rem;
+  }
+
+  .friends-sidebar-btn:hover {
+    background-color: #f0f4ff;
+  }
+
+  .friends-sidebar-btn.active {
+    background-color: #667eea;
+    color: white;
+  }
+
+  .friends-filter-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    border-radius: 5px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .friends-filter-toggle:hover {
+    background-color: #e9ecef;
+  }
+
+  .friends-filter-toggle input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #667eea;
+  }
+
+  .friends-filter-toggle-label {
+    flex: 1;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+  }
+
+  .friends-filter-section {
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e0e0e0;
+  }
+
+  .friends-sidebar-btn:hover {
+    background: #667eea;
+    color: white;
+  }
+
+  .friends-list {
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .friends-list-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 5px;
+    transition: background-color 0.2s;
+    margin-bottom: 0.5rem;
+  }
+
+  .friends-list-item:hover {
+    background-color: #f5f5f5;
+  }
+
+  .friends-list-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: #667eea;
+  }
+
+  .friends-list-item-label {
+    flex: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .friend-username {
+    font-weight: 500;
+    color: #333;
+  }
+
+  .no-friends-message {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
+  }
+
+  .calendar-main {
+    flex: 1;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 2rem;
+  }
+
+  @media (max-width: 1024px) {
+    .calendar-wrapper {
+      flex-direction: column;
+    }
+
+    .friends-sidebar {
+      width: 100%;
+      position: relative;
+      top: 0;
+    }
+
+    .friends-sidebar-toggle {
+      display: block;
+    }
+
+    .friends-sidebar.collapsed .friends-list,
+    .friends-sidebar.collapsed .friends-sidebar-controls {
+      display: none;
+    }
+  }
 </style>
 
-<div class="calendar-container">
-  <div id="calendar"></div>
+<div class="calendar-wrapper">
+  <!-- Friends Sidebar -->
+  <div class="friends-sidebar" id="friendsSidebar">
+    <div class="friends-sidebar-header">
+      <h2 class="friends-sidebar-title">Friends' Calendars</h2>
+      <button
+        class="friends-sidebar-toggle"
+        id="sidebarToggle"
+        onclick="toggleFriendsSidebar()"
+      >
+        ☰
+      </button>
+    </div>
+    <div class="friends-sidebar-controls">
+      <button class="friends-sidebar-btn" onclick="selectAllFriends()">
+        Select All
+      </button>
+      <button class="friends-sidebar-btn" onclick="deselectAllFriends()">
+        Deselect All
+      </button>
+    </div>
+    <div class="friends-filter-section">
+      <div class="friends-filter-toggle">
+        <input
+          type="checkbox"
+          id="toggleMyEvents"
+          checked
+          onchange="toggleMyEvents(this.checked)"
+        />
+        <label for="toggleMyEvents" class="friends-filter-toggle-label">
+          Show My Events
+        </label>
+      </div>
+      <div class="friends-filter-toggle">
+        <input
+          type="checkbox"
+          id="toggleFriendEvents"
+          checked
+          onchange="toggleFriendEvents(this.checked)"
+        />
+        <label for="toggleFriendEvents" class="friends-filter-toggle-label">
+          Show Friend Events
+        </label>
+      </div>
+    </div>
+    <div class="friends-list" id="friendsList">
+      <div class="no-friends-message">Loading friends...</div>
+    </div>
+    <div class="friends-legend" id="friendsLegend" style="display: none">
+      <div class="friends-legend-title">Event Colors</div>
+      <div id="friendsLegendContent">
+        <div class="friends-legend-empty">
+          Select friends to see color legend
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calendar Main Content -->
+  <div class="calendar-main">
+    <div id="calendar"></div>
+  </div>
 </div>
 
 <!-- Event Details Modal -->
@@ -758,5 +1025,294 @@
   window.initialEventsData = <%- events %>;
 </script>
 <script src="/utils/calendar-utils.js"></script>
+
+<script>
+  // Friends Sidebar Functionality
+  let friendsList = [];
+  let selectedFriendIds = new Set();
+
+  // Filter toggles
+  let showMyEvents = true;
+  let showFriendEvents = true;
+
+  // Gray color palette for friend events
+  const grayColours = [
+    "#ced4da",
+    "#adb5bd",
+    "#6c757d",
+    "#495057",
+    "#343a40",
+    "#212529",
+  ];
+
+  // Map friend IDs to their assigned gray color (for consistency)
+  const friendColorMap = new Map();
+
+  // Get a random gray color for a friend (consistent per friend)
+  function getFriendGrayColor(friendId) {
+    if (!friendColorMap.has(friendId)) {
+      // Use friendId as seed for consistent color assignment
+      const colorIndex = friendId % grayColours.length;
+      friendColorMap.set(friendId, grayColours[colorIndex]);
+    }
+    return friendColorMap.get(friendId);
+  }
+
+  // Toggle my events visibility
+  window.toggleMyEvents = function (show) {
+    showMyEvents = show;
+    if (!window.calendar) return;
+
+    const userEventsSource = window.calendar.getEventSourceById("user-events");
+    if (userEventsSource) {
+      if (show) {
+        // Source is already added, just refresh
+        userEventsSource.refetch();
+      } else {
+        // Hide user events by removing the source
+        userEventsSource.remove();
+      }
+    } else if (show) {
+      // Re-add user events source if it was removed
+      window.calendar.addEventSource({
+        id: "user-events",
+        events: function (fetchInfo, successCallback, failureCallback) {
+          fetch(
+            "/api/events?start=" +
+              fetchInfo.startStr +
+              "&end=" +
+              fetchInfo.endStr
+          )
+            .then((response) => response.json())
+            .then((data) => {
+              successCallback(data);
+            })
+            .catch((error) => {
+              console.error("Error fetching user events:", error);
+              successCallback(window.initialEventsData || []);
+              failureCallback(error);
+            });
+        },
+        editable: true,
+        color: "#0000af",
+      });
+    }
+  };
+
+  // Toggle friend events visibility
+  window.toggleFriendEvents = function (show) {
+    showFriendEvents = show;
+    if (!show) {
+      // Remove all friend event sources
+      const allFriendIds = Array.from(selectedFriendIds);
+      allFriendIds.forEach((friendId) => {
+        const existingSource = window.calendar.getEventSourceById(
+          `friend-${friendId}`
+        );
+        if (existingSource) {
+          existingSource.remove();
+        }
+      });
+      // Also remove old single source if it exists
+      const oldSource = window.calendar.getEventSourceById("friend-events");
+      if (oldSource) {
+        oldSource.remove();
+      }
+    } else {
+      // Reload friend events if friends are selected
+      if (selectedFriendIds.size > 0) {
+        loadFriendEvents();
+      }
+    }
+  };
+
+  // Fetch friends from API
+  async function loadFriends() {
+    try {
+      const response = await fetch("/api/friends");
+      if (!response.ok) {
+        throw new Error("Failed to fetch friends");
+      }
+      friendsList = await response.json();
+      renderFriendsList();
+    } catch (error) {
+      console.error("Error loading friends:", error);
+      document.getElementById("friendsList").innerHTML =
+        '<div class="no-friends-message">Failed to load friends</div>';
+    }
+  }
+
+  // Render friends list with checkboxes
+  function renderFriendsList() {
+    const friendsListEl = document.getElementById("friendsList");
+
+    if (friendsList.length === 0) {
+      friendsListEl.innerHTML =
+        '<div class="no-friends-message">No accepted friends found</div>';
+      return;
+    }
+
+    // Filter to only show ACCEPTED friends
+    const acceptedFriends = friendsList.filter((f) => f.status === "ACCEPTED");
+
+    if (acceptedFriends.length === 0) {
+      friendsListEl.innerHTML =
+        '<div class="no-friends-message">No accepted friends found</div>';
+      return;
+    }
+
+    friendsListEl.innerHTML = acceptedFriends
+      .map(
+        (friend) => `
+      <div class="friends-list-item">
+        <input
+          type="checkbox"
+          id="friend-${friend.user_id}"
+          value="${friend.user_id}"
+          onchange="handleFriendSelection(${friend.user_id}, this.checked)"
+          ${selectedFriendIds.has(friend.user_id) ? "checked" : ""}
+        />
+        <label for="friend-${friend.user_id}" class="friends-list-item-label">
+          <span class="friend-username">${friend.username}</span>
+        </label>
+      </div>
+    `
+      )
+      .join("");
+  }
+
+  // Load friend events and add to calendar
+  function loadFriendEvents() {
+    // Wait for calendar to be initialized
+    if (!window.calendar) {
+      // Retry after a short delay if calendar isn't ready yet
+      setTimeout(loadFriendEvents, 100);
+      return;
+    }
+
+    // Get friend IDs array once
+    const friendIdsArray = Array.from(selectedFriendIds);
+
+    // Remove all existing friend event sources
+    friendIdsArray.forEach((friendId) => {
+      const existingSource = window.calendar.getEventSourceById(
+        `friend-${friendId}`
+      );
+      if (existingSource) {
+        existingSource.remove();
+      }
+    });
+
+    // Also remove the old single source if it exists (for backward compatibility)
+    const oldSource = window.calendar.getEventSourceById("friend-events");
+    if (oldSource) {
+      oldSource.remove();
+    }
+
+    // If no friends selected or friend events are hidden, don't add friend events source
+    if (friendIdsArray.length === 0 || !showFriendEvents) {
+      return;
+    }
+
+    // Create separate event source for each friend (for individual gray color coding)
+
+    friendIdsArray.forEach((friendId) => {
+      const friendGrayColor = getFriendGrayColor(friendId);
+      const friend = friendsList.find((f) => f.user_id === friendId);
+      const friendUsername = friend ? friend.username : `Friend ${friendId}`;
+
+      const friendEventsSource = {
+        id: `friend-${friendId}`,
+        events: function (fetchInfo, successCallback, failureCallback) {
+          // Make one API call for all friends, then filter client-side
+          const friendIdsParam = friendIdsArray.join(",");
+          fetch(
+            `/api/friends/events?friendIds=${friendIdsParam}&start=${fetchInfo.startStr}&end=${fetchInfo.endStr}`
+          )
+            .then((response) => response.json())
+            .then((data) => {
+              // Filter events to only include this friend's events
+              const friendEvents = data
+                .filter(
+                  (event) =>
+                    event.extendedProps.friend_username === friendUsername
+                )
+                .map((event) => {
+                  // Override event color with friend's assigned gray color
+                  return {
+                    ...event,
+                    color: friendGrayColor,
+                    backgroundColor: friendGrayColor,
+                    borderColor: friendGrayColor,
+                  };
+                });
+              successCallback(friendEvents);
+            })
+            .catch((error) => {
+              console.error(
+                `Error fetching events for friend ${friendId}:`,
+                error
+              );
+              successCallback([]);
+              failureCallback(error);
+            });
+        },
+        editable: false, // Friend events cannot be edited
+        color: friendGrayColor, // Random gray color per friend
+        textColor: "#ffffff",
+      };
+
+      // Add friend events source to calendar
+      window.calendar.addEventSource(friendEventsSource);
+    });
+  }
+
+  // Handle individual friend selection
+  window.handleFriendSelection = function (friendId, isSelected) {
+    if (isSelected) {
+      selectedFriendIds.add(friendId);
+    } else {
+      selectedFriendIds.delete(friendId);
+    }
+    // Load/unload friend events based on selection
+    loadFriendEvents();
+  };
+
+  // Select all friends
+  window.selectAllFriends = function () {
+    const acceptedFriends = friendsList.filter((f) => f.status === "ACCEPTED");
+    acceptedFriends.forEach((friend) => {
+      selectedFriendIds.add(friend.user_id);
+      const checkbox = document.getElementById(`friend-${friend.user_id}`);
+      if (checkbox) checkbox.checked = true;
+    });
+    // Load friend events for all selected friends
+    loadFriendEvents();
+  };
+
+  // Deselect all friends
+  window.deselectAllFriends = function () {
+    selectedFriendIds.clear();
+    const checkboxes = document.querySelectorAll(
+      '#friendsList input[type="checkbox"]'
+    );
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = false;
+    });
+    // Remove friend events from calendar
+    loadFriendEvents();
+  };
+
+  // Toggle sidebar (for mobile)
+  window.toggleFriendsSidebar = function () {
+    const sidebar = document.getElementById("friendsSidebar");
+    sidebar.classList.toggle("collapsed");
+  };
+
+  // Load friends when page loads
+  document.addEventListener("DOMContentLoaded", function () {
+    loadFriends();
+  });
+</script>
 
 <%- include('templates/footer') %>

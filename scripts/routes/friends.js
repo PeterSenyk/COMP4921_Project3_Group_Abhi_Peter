@@ -8,7 +8,7 @@ module.exports = (app) => {
       const user = getUserFromSession(req);
 
       let friends = await databaseService.getFriends(user.user_id);
-      console.log("Friends: ", friends);
+    //   console.log("Friends: ", friends);
 
       let friendListfinal = [];
 
@@ -26,6 +26,9 @@ module.exports = (app) => {
               return null;
             }
 
+            // Check if current user is the receiver (user_id2) of the friend request
+            const isReceiver = friend.user_id2 === user.user_id;
+
             return {
               username: otherFriend.username,
               user_id: otherFriend.user_id,
@@ -36,12 +39,13 @@ module.exports = (app) => {
                 names.monthNamesShort[friend.since.getMonth()] +
                 "/" +
                 friend.since.getFullYear(),
+              isReceiver: isReceiver, // Only receiver can accept pending requests
             };
           })
           .filter((friend) => friend !== null);
       }
 
-      console.log("FriendListFinal: ", friendListfinal);
+    //   console.log("FriendListFinal: ", friendListfinal);
 
       res.render("friends", {
         title: "Friends",
@@ -269,13 +273,35 @@ module.exports = (app) => {
           return res.status(400).json({ error: "Invalid friend ID" });
         }
 
+        // Find the relationship to determine who is the sender and receiver
+        const relationship = await databaseService.findFriendRelationship(
+          user.user_id,
+          friendId
+        );
+
+        if (!relationship) {
+          return res
+            .status(404)
+            .json({ error: "Friend relationship not found" });
+        }
+
+        // Verify the current user is the receiver (user_id2)
+        // In a friend request: user_id1 is the sender, user_id2 is the receiver
+        const isReceiver = relationship.user_id2 === user.user_id;
+
+        if (!isReceiver) {
+          return res.status(403).json({
+            error: "Only the receiver of the friend request can accept it",
+          });
+        }
+
         // Accept friend request
-        // friendId is the requester (the one who sent the request)
-        // user.user_id is the current user (the one accepting)
+        // user.user_id is the receiver (currentUserId)
+        // The sender is the other user (user_id1)
         try {
           const updatedRelationship = await databaseService.acceptFriendRequest(
             user.user_id,
-            friendId
+            relationship.user_id1
           );
 
           res.json({
@@ -341,6 +367,285 @@ module.exports = (app) => {
     } catch (error) {
       console.error("Error removing friend:", error);
       res.status(500).json({ error: "Failed to remove friend" });
+    }
+  });
+
+  // Helper function to transform events to FullCalendar format (with friend metadata)
+  function transformFriendEventsToFullCalendar(dbEvents, friendUsername) {
+    return dbEvents.map((event) => ({
+      id: event.event_id.toString(),
+      title: event.title,
+      start: event.start_at,
+      end: event.end_at,
+      color: event.colour || "#0000af",
+      description: event.description || "",
+      extendedProps: {
+        event_id: event.event_id,
+        user_id: event.user_id,
+        friend_username: friendUsername,
+        colour: event.colour || "#0000af",
+        description: event.description || "",
+      },
+    }));
+  }
+
+  // API endpoint: Get events for a specific friend (JSON)
+  app.get(
+    "/api/friends/:friendId/events",
+    isAuthenticated,
+    async (req, res) => {
+      try {
+        const user = getUserFromSession(req);
+
+        if (!user || !user.user_id) {
+          return res.status(401).json({ error: "Unauthorized" });
+        }
+
+        const friendId = parseInt(req.params.friendId);
+
+        if (!friendId || isNaN(friendId)) {
+          return res.status(400).json({ error: "Invalid friend ID" });
+        }
+
+        // Verify friendship exists and is ACCEPTED (required for calendar access)
+        const relationship = await databaseService.findFriendRelationship(
+          user.user_id,
+          friendId
+        );
+
+        if (!relationship) {
+          return res
+            .status(404)
+            .json({ error: "Friend relationship not found" });
+        }
+
+        if (relationship.status !== "ACCEPTED") {
+          return res.status(403).json({
+            error: "Cannot view calendar. Friendship must be accepted.",
+          });
+        }
+
+        // Get friend's user details
+        const friend =
+          relationship.user_id1 === friendId
+            ? await databaseService.findUserById(relationship.user_id1)
+            : await databaseService.findUserById(relationship.user_id2);
+
+        if (!friend) {
+          return res.status(404).json({ error: "Friend user not found" });
+        }
+
+        // Optional date range filtering
+        const start = req.query.start ? new Date(req.query.start) : null;
+        const end = req.query.end ? new Date(req.query.end) : null;
+
+        let friendEvents;
+        if (start && end) {
+          friendEvents = await databaseService.findEventsByUserIdAndDateRange(
+            friendId,
+            start,
+            end
+          );
+        } else {
+          friendEvents = await databaseService.findEventsByUserId(friendId);
+        }
+
+        // Transform events to FullCalendar format with friend metadata
+        const events = transformFriendEventsToFullCalendar(
+          friendEvents,
+          friend.username
+        );
+
+        res.json(events);
+      } catch (error) {
+        console.error("Error fetching friend events:", error);
+        res.status(500).json({ error: "Failed to fetch friend events" });
+      }
+    }
+  );
+
+  // API endpoint: Get events for multiple friends (JSON)
+  app.get("/api/friends/events", isAuthenticated, async (req, res) => {
+    try {
+      const user = getUserFromSession(req);
+
+      if (!user || !user.user_id) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Get friendIds from query parameter (comma-separated) or get all accepted friends
+      let friendIds = [];
+      const friendIdsParam = req.query.friendIds;
+
+      if (friendIdsParam) {
+        // Parse comma-separated friend IDs
+        friendIds = friendIdsParam
+          .split(",")
+          .map((id) => parseInt(id.trim()))
+          .filter((id) => !isNaN(id) && id > 0);
+
+        if (friendIds.length === 0) {
+          return res.status(400).json({ error: "Invalid friend IDs" });
+        }
+
+        // Verify all friendIds are accepted friends of the current user
+        const allFriends = await databaseService.getFriends(user.user_id);
+        const acceptedFriendIds = allFriends
+          .filter((f) => f.status === "ACCEPTED")
+          .map((f) => {
+            // Get the "other" friend's ID
+            return f.user_id1 === user.user_id ? f.user_id2 : f.user_id1;
+          });
+
+        // Check if all requested friendIds are in the accepted friends list
+        const invalidFriendIds = friendIds.filter(
+          (id) => !acceptedFriendIds.includes(id)
+        );
+
+        if (invalidFriendIds.length > 0) {
+          return res.status(403).json({
+            error: `Cannot view calendar for friend(s): ${invalidFriendIds.join(
+              ", "
+            )}. Friendship must be accepted.`,
+          });
+        }
+      } else {
+        // If no friendIds provided, get all accepted friends
+        const allFriends = await databaseService.getFriends(user.user_id);
+        friendIds = allFriends
+          .filter((f) => f.status === "ACCEPTED")
+          .map((f) => {
+            // Get the "other" friend's ID
+            return f.user_id1 === user.user_id ? f.user_id2 : f.user_id1;
+          });
+
+        if (friendIds.length === 0) {
+          return res.json([]); // No accepted friends, return empty array
+        }
+      }
+
+      // Optional date range filtering
+      const start = req.query.start ? new Date(req.query.start) : null;
+      const end = req.query.end ? new Date(req.query.end) : null;
+
+      // Get events for all specified friends
+      const friendEvents = await databaseService.findEventsByFriendIds(
+        friendIds,
+        start,
+        end
+      );
+
+      // Group events by friend and transform using helper function
+      const eventsByFriend = {};
+      for (const event of friendEvents) {
+        const friendUsername = event.user?.username || "Unknown";
+        if (!eventsByFriend[friendUsername]) {
+          eventsByFriend[friendUsername] = [];
+        }
+        eventsByFriend[friendUsername].push(event);
+      }
+
+      // Transform events using helper function for each friend
+      const allEvents = [];
+      for (const [friendUsername, events] of Object.entries(eventsByFriend)) {
+        const transformedEvents = transformFriendEventsToFullCalendar(
+          events,
+          friendUsername
+        );
+        allEvents.push(...transformedEvents);
+      }
+
+      res.json(allEvents);
+    } catch (error) {
+      console.error("Error fetching friends events:", error);
+      res.status(500).json({ error: "Failed to fetch friends events" });
+    }
+  });
+
+  // API endpoint: Get availability summary for friends (JSON)
+  app.get("/api/friends/availability", isAuthenticated, async (req, res) => {
+    try {
+      const user = getUserFromSession(req);
+
+      if (!user || !user.user_id) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+
+      // Get required parameters
+      const friendIdsParam = req.query.friendIds;
+      const startParam = req.query.start;
+      const endParam = req.query.end;
+
+      // Validate required parameters
+      if (!friendIdsParam) {
+        return res
+          .status(400)
+          .json({ error: "friendIds query parameter is required" });
+      }
+
+      if (!startParam || !endParam) {
+        return res
+          .status(400)
+          .json({ error: "start and end query parameters are required" });
+      }
+
+      // Parse friendIds
+      const friendIds = friendIdsParam
+        .split(",")
+        .map((id) => parseInt(id.trim()))
+        .filter((id) => !isNaN(id) && id > 0);
+
+      if (friendIds.length === 0) {
+        return res.status(400).json({ error: "Invalid friend IDs" });
+      }
+
+      // Parse dates
+      const startDate = new Date(startParam);
+      const endDate = new Date(endParam);
+
+      if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+        return res.status(400).json({ error: "Invalid date format" });
+      }
+
+      if (startDate >= endDate) {
+        return res
+          .status(400)
+          .json({ error: "Start date must be before end date" });
+      }
+
+      // Verify all friendIds are accepted friends of the current user
+      const allFriends = await databaseService.getFriends(user.user_id);
+      const acceptedFriendIds = allFriends
+        .filter((f) => f.status === "ACCEPTED")
+        .map((f) => {
+          // Get the "other" friend's ID
+          return f.user_id1 === user.user_id ? f.user_id2 : f.user_id1;
+        });
+
+      // Check if all requested friendIds are in the accepted friends list
+      const invalidFriendIds = friendIds.filter(
+        (id) => !acceptedFriendIds.includes(id)
+      );
+
+      if (invalidFriendIds.length > 0) {
+        return res.status(403).json({
+          error: `Cannot view availability for friend(s): ${invalidFriendIds.join(
+            ", "
+          )}. Friendship must be accepted.`,
+        });
+      }
+
+      // Get availability summary
+      const availability = await databaseService.findAvailabilityForFriends(
+        friendIds,
+        startDate,
+        endDate
+      );
+
+      res.json(availability);
+    } catch (error) {
+      console.error("Error fetching friends availability:", error);
+      res.status(500).json({ error: "Failed to fetch friends availability" });
     }
   });
 };

@@ -7,34 +7,73 @@ document.addEventListener("DOMContentLoaded", function () {
   // eventsData should be defined globally from the EJS template
   const eventsData = window.initialEventsData || [];
 
-  const calendar = new FullCalendar.Calendar(calendarEl, {
+  // Make calendar global so it can be accessed from friends sidebar
+  window.calendar = new FullCalendar.Calendar(calendarEl, {
     initialView: "dayGridMonth",
     headerToolbar: {
       left: "prev,next today",
       center: "title",
       right: "dayGridMonth,timeGridWeek,timeGridDay",
     },
-    // Use API endpoint for dynamic loading, with initial events for faster first render
-    events: function (fetchInfo, successCallback, failureCallback) {
-      // Fetch events from API endpoint (supports date range filtering)
-      fetch(
-        "/api/events?start=" + fetchInfo.startStr + "&end=" + fetchInfo.endStr
-      )
-        .then((response) => response.json())
-        .then((data) => {
-          successCallback(data);
-        })
-        .catch((error) => {
-          console.error("Error fetching events:", error);
-          // Fallback to initial events if API fails
-          successCallback(eventsData);
-          failureCallback(error);
-        });
-    },
+    // Use eventSources array to support multiple event sources (user events + friend events)
+    eventSources: [
+      {
+        // User's own events
+        id: "user-events",
+        events: function (fetchInfo, successCallback, failureCallback) {
+          // Fetch user's events from API endpoint (supports date range filtering)
+          fetch(
+            "/api/events?start=" +
+              fetchInfo.startStr +
+              "&end=" +
+              fetchInfo.endStr
+          )
+            .then((response) => response.json())
+            .then((data) => {
+              successCallback(data);
+            })
+            .catch((error) => {
+              console.error("Error fetching user events:", error);
+              // Fallback to initial events if API fails
+              successCallback(eventsData);
+              failureCallback(error);
+            });
+        },
+        editable: true, // User can edit their own events
+        color: "#0000af", // Default blue color for user events
+      },
+    ],
     eventClick: function (info) {
       // Show modal with event details
       showEventModal(info.event);
       info.jsEvent.preventDefault();
+    },
+    // Customize event rendering to differentiate friend events
+    eventDidMount: function (info) {
+      // Add visual distinction for friend events
+      if (info.event.extendedProps.friend_username) {
+        info.el.classList.add("friend-event");
+        info.el.style.opacity = "0.8";
+        // Get the gray color from the event (should be set by event source or override)
+        const grayColor =
+          info.event.backgroundColor ||
+          info.event.borderColor ||
+          info.event.color ||
+          "#dee2e6";
+        // Apply gray color to the event background
+        info.event.setProp("color", grayColor);
+        info.event.setProp("backgroundColor", grayColor);
+        info.event.setProp("borderColor", grayColor);
+        // Thick colored border matching the gray color
+        info.el.style.borderLeft = "6px solid " + grayColor;
+        info.el.style.borderLeftColor = grayColor;
+        info.el.style.backgroundColor = grayColor;
+        info.el.title =
+          info.event.title +
+          " (" +
+          info.event.extendedProps.friend_username +
+          ")";
+      }
     },
     eventDisplay: "block",
     height: "auto",
@@ -51,21 +90,35 @@ document.addEventListener("DOMContentLoaded", function () {
     scrollTime: "08:00:00", // Scroll to 8am by default (for week/day views)
     // Handle when an event is dropped (moved to a new date/time)
     eventDrop: function (info) {
+      // Only allow editing user's own events, not friend events
+      if (info.event.extendedProps.friend_username) {
+        // Revert the change for friend events
+        info.revert();
+        alert("You cannot modify friend events");
+        return;
+      }
       updateEvent(info.event);
     },
     // Handle when an event is resized (duration changed)
     eventResize: function (info) {
+      // Only allow editing user's own events, not friend events
+      if (info.event.extendedProps.friend_username) {
+        // Revert the change for friend events
+        info.revert();
+        alert("You cannot modify friend events");
+        return;
+      }
       updateEvent(info.event);
     },
     // Handle when a time slot is selected (for creating new events)
     select: function (selectInfo) {
       // Show form modal for creating new event
       showEventFormModal(null, selectInfo);
-      calendar.unselect(); // Clear selection
+      window.calendar.unselect(); // Clear selection
     },
   });
 
-  calendar.render();
+  window.calendar.render();
 
   // Store current event for modal operations
   let currentEvent = null;
@@ -80,7 +133,22 @@ document.addEventListener("DOMContentLoaded", function () {
     const descriptionEl = document.getElementById("modalEventDescription");
 
     // Populate modal with event data
-    titleEl.textContent = event.title;
+    // Show friend name if it's a friend's event
+    const editBtn = document.getElementById("modalEditBtn");
+    const deleteBtn = document.getElementById("modalDeleteBtn");
+
+    if (event.extendedProps.friend_username) {
+      titleEl.textContent =
+        event.title + " (" + event.extendedProps.friend_username + ")";
+      // Hide edit/delete buttons for friend events
+      if (editBtn) editBtn.style.display = "none";
+      if (deleteBtn) deleteBtn.style.display = "none";
+    } else {
+      titleEl.textContent = event.title;
+      // Show edit/delete buttons for user's own events
+      if (editBtn) editBtn.style.display = "inline-block";
+      if (deleteBtn) deleteBtn.style.display = "inline-block";
+    }
     startEl.textContent = event.start.toLocaleString("en-US", {
       weekday: "short",
       year: "numeric",
@@ -188,7 +256,7 @@ document.addEventListener("DOMContentLoaded", function () {
           console.error("Error updating event:", data.error);
           alert("Failed to update event: " + data.error);
           // Revert the event change
-          calendar.refetchEvents();
+          window.calendar.refetchEvents();
         } else {
           console.log("Event updated successfully");
         }
@@ -417,7 +485,7 @@ document.addEventListener("DOMContentLoaded", function () {
             submitBtn.textContent = "Update Event";
           } else {
             // Update event in calendar
-            const calendarEvent = calendar.getEventById(eventId);
+            const calendarEvent = window.calendar.getEventById(eventId);
             if (calendarEvent) {
               calendarEvent.setProp("title", data.title);
               calendarEvent.setStart(new Date(data.start_at));
@@ -452,7 +520,7 @@ document.addEventListener("DOMContentLoaded", function () {
             submitBtn.textContent = "Create Event";
           } else {
             // Add the new event to the calendar
-            calendar.addEvent({
+            window.calendar.addEvent({
               id: data.event_id.toString(),
               title: data.title,
               start: data.start_at,

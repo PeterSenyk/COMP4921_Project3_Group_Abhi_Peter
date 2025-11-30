@@ -4,7 +4,7 @@
   .friends-container {
     max-width: 900px;
     margin: 2rem auto;
-    padding: 0 1rem;
+    /* padding: 0 1rem; */
   }
 
   .friends-container h1 {
@@ -131,6 +131,7 @@
   .action-buttons {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.25rem;
   }
 
@@ -190,7 +191,7 @@
           <th>Username</th>
           <th>Status</th>
           <th>Since</th>
-          <th>Action</th>
+          <th style="text-align: center">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -212,7 +213,7 @@
           <td><%= friend.since %></td>
           <td>
             <div class="action-buttons">
-              <% if (friend.status === 'PENDING') { %>
+              <% if (friend.status === 'PENDING' && friend.isReceiver) { %>
               <button
                 class="accept-friend-btn"
                 data-friend-id="<%= friend.user_id %>"
