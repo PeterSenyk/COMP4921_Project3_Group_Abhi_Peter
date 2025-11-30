@@ -32,8 +32,8 @@ class DatabaseService {
   async findUserById(userId) {
     return await prisma.user.findUnique({
       where: {
-        user_id: userId
-      }
+        user_id: userId,
+      },
     });
   }
 
@@ -122,23 +122,49 @@ class DatabaseService {
     });
   }
 
-  // get friends
+  // get friends (with user details included)
   async getFriends(userId) {
     return await prisma.friend.findMany({
       where: {
-      OR : [
-        { user_id1: userId },
-        { user_id2: userId }
-      ]
-    }
+        OR: [{ user_id1: userId }, { user_id2: userId }],
+      },
+      include: {
+        user1: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+        user2: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+      },
     });
   }
 
-  // get friend requests
+  // get friend requests (pending requests received by user, with user details)
   async getFriendRequests(userId) {
     return await prisma.friend.findMany({
       where: {
         user_id2: userId,
+        status: "PENDING",
+      },
+      include: {
+        user1: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
       },
     });
   }
@@ -153,38 +179,261 @@ class DatabaseService {
     });
   }
 
-  // accept friend request
-  async acceptFriendRequest(userId, friendId) {
-    return await prisma.friend.update({
-      where: {
-        user_id1: userId,
-        user_id2: friendId,
+  // create friend request (with validation and duplicate checking)
+  async createFriendRequest(userId1, userId2) {
+    // Prevent self-friending
+    if (userId1 === userId2) {
+      throw new Error("Cannot send friend request to yourself");
+    }
+
+    // Check if relationship already exists
+    const existingRelationship = await this.findFriendRelationship(
+      userId1,
+      userId2
+    );
+    if (existingRelationship) {
+      throw new Error("Friend relationship already exists");
+    }
+
+    // Validate both users exist
+    const user1 = await this.findUserById(userId1);
+    const user2 = await this.findUserById(userId2);
+
+    if (!user1) {
+      throw new Error("User not found");
+    }
+    if (!user2) {
+      throw new Error("Friend user not found");
+    }
+
+    // Create friend request with PENDING status
+    return await prisma.friend.create({
+      data: {
+        user_id1: userId1,
+        user_id2: userId2,
+        status: "PENDING",
       },
     });
   }
 
-  // reject friend request
-  async rejectFriendRequest(userId, friendId) {
+  // accept friend request (with validation)
+  // currentUserId: the user accepting the request
+  // requesterId: the user who sent the friend request
+  async acceptFriendRequest(currentUserId, requesterId) {
+    // Find the relationship (handles both orderings)
+    const relationship = await this.findFriendRelationship(
+      currentUserId,
+      requesterId
+    );
+
+    if (!relationship) {
+      throw new Error("Friend relationship not found");
+    }
+
+    // Verify the request is PENDING
+    if (relationship.status !== "PENDING") {
+      throw new Error(
+        `Cannot accept friend request. Current status: ${relationship.status}`
+      );
+    }
+
+    // Verify the current user is the one receiving the request
+    // In a friend request: user_id1 is the sender, user_id2 is the receiver
+    // The current user (accepting) should be user_id2
+    const isReceiver =
+      relationship.user_id1 === requesterId &&
+      relationship.user_id2 === currentUserId;
+
+    if (!isReceiver) {
+      throw new Error("You are not authorized to accept this friend request");
+    }
+
+    // Update status to ACCEPTED using composite key
     return await prisma.friend.update({
       where: {
-        user_id1: userId,
-        user_id2: friendId,
+        user_id1_user_id2: {
+          user_id1: relationship.user_id1,
+          user_id2: relationship.user_id2,
+        },
+      },
+      data: {
+        status: "ACCEPTED",
       },
     });
   }
 
-  // delete friend
-  async deleteFriend(userId, friendId) {
+  // reject friend request (deletes the relationship)
+  async rejectFriendRequest(userId1, userId2) {
+    const relationship = await this.findFriendRelationship(userId1, userId2);
+
+    if (!relationship) {
+      throw new Error("Friend relationship not found");
+    }
+
+    // Delete the pending request using composite key
     return await prisma.friend.delete({
       where: {
-        user_id1: userId,
-        user_id2: friendId,
+        user_id1_user_id2: {
+          user_id1: relationship.user_id1,
+          user_id2: relationship.user_id2,
+        },
       },
     });
   }
 
+  // delete friend (removes friendship, handles bidirectional relationships)
+  async deleteFriend(userId1, userId2) {
+    const relationship = await this.findFriendRelationship(userId1, userId2);
 
+    if (!relationship) {
+      throw new Error("Friend relationship not found");
+    }
 
+    // Delete using the actual relationship order from database with composite key
+    return await prisma.friend.delete({
+      where: {
+        user_id1_user_id2: {
+          user_id1: relationship.user_id1,
+          user_id2: relationship.user_id2,
+        },
+      },
+    });
+  }
+
+  // find friend relationship between two users (handles both orderings)
+  async findFriendRelationship(userId1, userId2) {
+    // Check both possible orderings since Friend table has composite key (user_id1, user_id2)
+    const relationship = await prisma.friend.findFirst({
+      where: {
+        OR: [
+          { user_id1: userId1, user_id2: userId2 },
+          { user_id1: userId2, user_id2: userId1 },
+        ],
+      },
+    });
+
+    return relationship;
+  }
+
+  // find events by friend ids (multiple friends, with optional date range)
+  async findEventsByFriendIds(friendIds, startDate, endDate) {
+    // Build where clause
+    const whereClause = {
+      user_id: {
+        in: friendIds,
+      },
+    };
+
+    // Add date range filtering if provided
+    if (startDate && endDate) {
+      whereClause.start_at = {
+        gte: startDate,
+        lt: endDate,
+      };
+    } else if (startDate) {
+      whereClause.start_at = {
+        gte: startDate,
+      };
+    }
+
+    return await prisma.event.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+      },
+      orderBy: {
+        start_at: "asc",
+      },
+    });
+  }
+
+  // find availability for friends (calculate free/busy times)
+  async findAvailabilityForFriends(friendIds, startDate, endDate) {
+    // Get all events for the friends
+    const events = await this.findEventsByFriendIds(
+      friendIds,
+      startDate,
+      endDate
+    );
+
+    // Process events into busy time blocks
+    const busyTimes = events.map((event) => ({
+      start: event.start_at,
+      end: event.end_at,
+      friendId: event.user_id,
+      friendName: event.user.username,
+      eventTitle: event.title,
+      eventId: event.event_id,
+    }));
+
+    // Calculate free time blocks (inverse of busy times)
+    const freeTimes = this.calculateFreeTimes(
+      busyTimes,
+      startDate || new Date(),
+      endDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // Default to 30 days if not provided
+    );
+
+    return {
+      busyTimes: busyTimes,
+      freeTimes: freeTimes,
+    };
+  }
+
+  // Helper method to calculate free time blocks from busy times
+  calculateFreeTimes(busyTimes, startDate, endDate) {
+    if (busyTimes.length === 0) {
+      // If no busy times, the entire range is free
+      return [
+        {
+          start: startDate,
+          end: endDate,
+        },
+      ];
+    }
+
+    // Sort busy times by start date
+    const sortedBusyTimes = [...busyTimes].sort(
+      (a, b) => new Date(a.start) - new Date(b.start)
+    );
+
+    const freeTimes = [];
+    let currentTime = new Date(startDate);
+
+    for (const busyBlock of sortedBusyTimes) {
+      const busyStart = new Date(busyBlock.start);
+      const busyEnd = new Date(busyBlock.end);
+
+      // If there's a gap before this busy block, it's free time
+      if (currentTime < busyStart) {
+        freeTimes.push({
+          start: new Date(currentTime),
+          end: new Date(busyStart),
+        });
+      }
+
+      // Update current time to the end of this busy block
+      if (busyEnd > currentTime) {
+        currentTime = busyEnd;
+      }
+    }
+
+    // Check if there's free time after the last busy block
+    if (currentTime < endDate) {
+      freeTimes.push({
+        start: new Date(currentTime),
+        end: new Date(endDate),
+      });
+    }
+
+    return freeTimes;
+  }
 }
 
 module.exports = new DatabaseService();

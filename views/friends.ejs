@@ -1,26 +1,379 @@
 <%- include('templates/header') %>
 
-
 <style>
-    .friends-container {
-        max-width: 800px;
-        margin: 2rem auto;
-        padding: 0 1rem;
-    }
+  .friends-container {
+    max-width: 900px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .friends-container h1 {
+    color: #333;
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+  }
+
+  .friends-table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  thead th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid #e0e0e0;
+    transition: background-color 0.2s;
+  }
+
+  tbody tr:hover {
+    background-color: #f5f5f5;
+  }
+
+  tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  tbody td {
+    padding: 1rem;
+    color: #333;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+  }
+
+  .status-badge.ACCEPTED {
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  .status-badge.PENDING {
+    background-color: #fff3cd;
+    color: #856404;
+  }
+
+  .status-badge.BLOCKED {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .remove-friend-btn {
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .remove-friend-btn:hover {
+    background-color: #f8d7da;
+    color: #c82333;
+    transform: scale(1.1);
+  }
+
+  .remove-friend-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .accept-friend-btn {
+    background: none;
+    border: none;
+    color: #28a745;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+  }
+
+  .accept-friend-btn:hover {
+    background-color: #d4edda;
+    color: #155724;
+    transform: scale(1.1);
+  }
+
+  .accept-friend-btn svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .action-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .no-friends-message {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-style: italic;
+  }
+
+  .add-friend-form-container {
+    max-width: 900px;
+    margin: 2rem auto 0 auto;
+    padding: 0 1rem;
+    background: #f7fafc;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+  }
+  .add-friend-form {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding: 1.5rem 0;
+  }
+  .add-friend-form input[type="text"] {
+    flex: 1;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    border: 1px solid #dadce0;
+    border-radius: 4px;
+    background: #fff;
+  }
+  .add-friend-form button {
+    padding: 0.6rem 1.25rem;
+    border: none;
+    border-radius: 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.12s;
+  }
+  .add-friend-form button:hover {
+    background: linear-gradient(135deg, #5641c8 0%, #4a3784 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.15);
+  }
 </style>
 
-
 <div class="friends-container">
-    <h1>Friends</h1>
-    <ul>
-        <% friends.forEach(friend => { %>
-            <li><%= friend.username %></li>
-        <% }); %>
-    </ul>
+  <h1>Friends</h1>
+  <div class="friends-table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Status</th>
+          <th>Since</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% if (friends.length === 0 || (friends.length === 1 &&
+        friends[0].username === "No friends found")) { %>
+        <tr>
+          <td colspan="4" class="no-friends-message">
+            No friends found. Add a friend to get started!
+          </td>
+        </tr>
+        <% } else { %> <% friends.forEach(friend => { %>
+        <tr>
+          <td><strong><%= friend.username %></strong></td>
+          <td>
+            <span class="status-badge <%= friend.status %>">
+              <%= friend.status %>
+            </span>
+          </td>
+          <td><%= friend.since %></td>
+          <td>
+            <div class="action-buttons">
+              <% if (friend.status === 'PENDING') { %>
+              <button
+                class="accept-friend-btn"
+                data-friend-id="<%= friend.user_id %>"
+                data-friend-username="<%= friend.username %>"
+                title="Accept Friend Request"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </button>
+              <% } %>
+              <button
+                class="remove-friend-btn"
+                data-friend-id="<%= friend.user_id %>"
+                data-friend-username="<%= friend.username %>"
+                title="<%= friend.status === 'PENDING' ? 'Decline Friend Request' : 'Remove Friend' %>"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                  />
+                </svg>
+              </button>
+            </div>
+          </td>
+        </tr>
+        <% }); %> <% } %>
+      </tbody>
+    </table>
+  </div>
 </div>
 
+<div class="add-friend-form-container">
+  <form
+    class="add-friend-form"
+    action="/friends/add/"
+    method="POST"
+    id="addFriendForm"
+  >
+    <input
+      type="text"
+      id="friend_ID"
+      name="friend_ID"
+      placeholder="Enter friend's user ID..."
+      required
+    />
+    <button type="submit">Add Friend</button>
+  </form>
+</div>
+<script>
+  // Handle add friend form submission
+  document.addEventListener("DOMContentLoaded", function () {
+    const addFriendForm = document.getElementById("addFriendForm");
+    if (addFriendForm) {
+      addFriendForm.addEventListener("submit", function (e) {
+        const friendIdInput = document.getElementById("friend_ID");
+        const friendId = parseInt(friendIdInput.value.trim());
 
+        if (!friendId || isNaN(friendId)) {
+          e.preventDefault();
+          alert("Please enter a valid friend's user ID (must be a number)");
+          return false;
+        }
 
+        // Form will submit normally via POST to /friends/add/
+        // No need to prevent default or redirect
+      });
+    }
+  });
 
+  // Handle accept friend button clicks
+  document.addEventListener("DOMContentLoaded", function () {
+    const acceptButtons = document.querySelectorAll(".accept-friend-btn");
+    acceptButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        const friendId = this.getAttribute("data-friend-id");
+        const friendUsername = this.getAttribute("data-friend-username");
+        acceptFriend(friendId, friendUsername);
+      });
+    });
+  });
+
+  // Handle remove friend button clicks
+  document.addEventListener("DOMContentLoaded", function () {
+    const removeButtons = document.querySelectorAll(".remove-friend-btn");
+    removeButtons.forEach((button) => {
+      button.addEventListener("click", function () {
+        const friendId = this.getAttribute("data-friend-id");
+        const friendUsername = this.getAttribute("data-friend-username");
+        removeFriend(friendId, friendUsername);
+      });
+    });
+  });
+
+  function acceptFriend(friendId, friendUsername) {
+    if (confirm(`Accept friend request from ${friendUsername}?`)) {
+      // Send PUT request to accept friend request
+      fetch(`/api/friends/${friendId}/accept`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            return response.json();
+          }
+          return response.json().then((err) => Promise.reject(err));
+        })
+        .then((data) => {
+          alert("Friend request accepted!");
+          // Reload page to show updated status
+          window.location.reload();
+        })
+        .catch((error) => {
+          console.error("Error accepting friend request:", error);
+          alert(
+            error.error || "Failed to accept friend request. Please try again."
+          );
+        });
+    }
+  }
+
+  function removeFriend(friendId, friendUsername) {
+    const actionText =
+      document
+        .querySelector(`.remove-friend-btn[data-friend-id="${friendId}"]`)
+        ?.getAttribute("title") || "remove";
+
+    if (
+      confirm(
+        `Are you sure you want to ${actionText.toLowerCase()} ${friendUsername}?`
+      )
+    ) {
+      // Create a form to submit POST request
+      const form = document.createElement("form");
+      form.method = "POST";
+      form.action = `/friends/remove/${friendId}`;
+
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+</script>
 
 <%- include('templates/footer') %>
