@@ -1,0 +1,304 @@
+<%- include('templates/header') %>
+
+<style>
+  .event-list-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+  }
+
+  .event-list-container h1 {
+    color: #333;
+    margin-bottom: 1.5rem;
+    font-size: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .empty-state {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 3rem;
+    text-align: center;
+    color: #666;
+  }
+
+  .empty-state-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  .events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .event-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+    border-left: 4px solid;
+  }
+
+  .event-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  }
+
+  .event-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    gap: 1rem;
+  }
+
+  .event-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0;
+    flex: 1;
+  }
+
+  .event-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 0.9rem;
+  }
+
+  .btn-edit {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
+
+  .btn-edit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-delete {
+    background: #dc3545;
+    color: white;
+  }
+
+  .btn-delete:hover {
+    background: #c82333;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+  }
+
+  .event-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .event-detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .event-detail-label {
+    font-size: 0.85rem;
+    color: #666;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .event-detail-value {
+    font-size: 1rem;
+    color: #333;
+  }
+
+  .event-description {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .error-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+  }
+
+  .view-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .view-tab {
+    padding: 0.75rem 1.5rem;
+    background: white;
+    border: 2px solid #667eea;
+    border-radius: 5px;
+    text-decoration: none;
+    color: #667eea;
+    font-weight: 500;
+    transition: all 0.2s;
+  }
+
+  .view-tab:hover {
+    background: #667eea;
+    color: white;
+  }
+
+  .view-tab.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+  }
+
+  @media (max-width: 768px) {
+    .event-card-header {
+      flex-direction: column;
+    }
+
+    .event-actions {
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    .event-details {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<div class="event-list-container">
+  <h1>
+    <% if (viewType === 'today') { %>
+    <span>📅</span>
+    Today's Events <% } else if (viewType === 'upcoming') { %>
+    <span>🔮</span>
+    Upcoming Events <% } else { %>
+    <span>📜</span>
+    Past Events <% } %>
+  </h1>
+
+  <div class="view-tabs">
+    <a
+      href="/events/today"
+      class="view-tab <%= viewType === 'today' ? 'active' : '' %>"
+      >Today</a
+    >
+    <a
+      href="/events/upcoming"
+      class="view-tab <%= viewType === 'upcoming' ? 'active' : '' %>"
+      >Upcoming</a
+    >
+    <a
+      href="/events/past"
+      class="view-tab <%= viewType === 'past' ? 'active' : '' %>"
+      >Past</a
+    >
+    <a href="/calendar" class="view-tab">Calendar View</a>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="error-message"><%= error %></div>
+  <% } %> <% if (typeof events !== 'undefined' && events.length > 0) { %>
+  <div class="events-list" data-events="<%- JSON.stringify(events) %>">
+    <% events.forEach(function(event) { %>
+    <div
+      class="event-card"
+      style="border-left-color: <%= event.colour || '#0000af' %>"
+    >
+      <div class="event-card-header">
+        <h2 class="event-title"><%= event.title %></h2>
+        <div class="event-actions">
+          <a
+            href="/calendar"
+            class="btn btn-edit"
+            onclick="editEvent(<%= event.event_id %>); return false;"
+            >Edit</a
+          >
+          <button
+            class="btn btn-delete"
+            onclick="deleteEvent(<%= event.event_id %>)"
+          >
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <div class="event-details">
+        <div class="event-detail-item">
+          <span class="event-detail-label">Start</span>
+          <span class="event-detail-value"
+            ><%= new Date(event.start_at).toLocaleString() %></span
+          >
+        </div>
+        <div class="event-detail-item">
+          <span class="event-detail-label">End</span>
+          <span class="event-detail-value"
+            ><%= new Date(event.end_at).toLocaleString() %></span
+          >
+        </div>
+        <div class="event-detail-item">
+          <span class="event-detail-label">Duration</span>
+          <span
+            class="event-detail-value"
+            id="duration-<%= event.event_id %>"
+          ></span>
+        </div>
+      </div>
+
+      <% if (event.description) { %>
+      <div class="event-description"><%= event.description %></div>
+      <% } %>
+    </div>
+    <% }); %>
+  </div>
+  <% } else { %>
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      <% if (viewType === 'today') { %>📅<% } else if (viewType === 'upcoming')
+      { %>🔮<% } else { %>📜<% } %>
+    </div>
+    <h2>
+      <% if (viewType === 'today') { %>No Events Today<% } else if (viewType ===
+      'upcoming') { %>No Upcoming Events<% } else { %>No Past Events<% } %>
+    </h2>
+    <p>
+      <% if (viewType === 'today') { %>You don't have any events scheduled for
+      today.<% } else if (viewType === 'upcoming') { %>You don't have any
+      upcoming events.<% } else { %>You don't have any past events.<% } %>
+    </p>
+    <a href="/calendar" class="btn btn-edit" style="margin-top: 1rem"
+      >Go to Calendar</a
+    >
+  </div>
+  <% } %>
+</div>
+
+<script src="/utils/event-list-utils.js"></script>
+
+<%- include('templates/footer') %>

@@ -211,6 +211,67 @@ class DatabaseService {
     });
   }
 
+  // find today's events for a user (excludes deleted events)
+  async findTodaysEvents(userId) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return await prisma.event.findMany({
+      where: {
+        user_id: userId,
+        deleted_at: null,
+        start_at: {
+          gte: today,
+          lt: tomorrow,
+        },
+      },
+      orderBy: {
+        start_at: "desc", // Most recent first
+      },
+    });
+  }
+
+  // find upcoming events for a user (excludes deleted events)
+  async findUpcomingEvents(userId) {
+    const tomorrow = new Date();
+    tomorrow.setHours(0, 0, 0, 0);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    return await prisma.event.findMany({
+      where: {
+        user_id: userId,
+        deleted_at: null,
+        start_at: {
+          gte: tomorrow,
+        },
+      },
+      orderBy: {
+        start_at: "asc", // Chronological order
+      },
+    });
+  }
+
+  // find past events for a user (excludes deleted events)
+  async findPastEvents(userId) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return await prisma.event.findMany({
+      where: {
+        user_id: userId,
+        deleted_at: null,
+        end_at: {
+          lt: today,
+        },
+      },
+      orderBy: {
+        end_at: "desc", // Most recent first
+      },
+    });
+  }
+
   // add friend
   async addFriend(userId, friendId) {
     return await prisma.friend.create({

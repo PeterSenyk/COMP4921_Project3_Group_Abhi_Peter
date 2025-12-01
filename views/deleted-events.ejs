@@ -143,6 +143,11 @@
   .btn-delete {
     background: #dc3545;
     color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    white-space: nowrap;
   }
 
   .btn-delete:hover {
@@ -253,14 +258,15 @@
               </button>
               <% } %>
               <button
-                class="btn btn-delete";
-                onclick="permanentlyDeleteEvent(<%= event.event_id %>)";
-                id="delete-btn-<%= event.event_id %>";
-                <%  if (!event.isRestorable) { %>
+                class="btn btn-delete"
+                onclick="permanentlyDeleteEvent(<%= event.event_id %>)"
+                id="delete-btn-<%= event.event_id %>"
+                <% if (!event.isRestorable) { %>
                 title="Permanently delete this event"
                 <% } %>
-              > Delete Permanently 
-            </button>
+               > 
+                Delete 🗑️ 
+              </button>
             </div>
           </td>
         </tr>
