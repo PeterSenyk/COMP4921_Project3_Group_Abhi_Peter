@@ -69,6 +69,9 @@ class DatabaseService {
         event_id: eventId,
         deleted_at: null,
       },
+      include: {
+        recurrence: true,
+      },
     });
   }
 
@@ -82,12 +85,50 @@ class DatabaseService {
   }
 
   // update event
-  async updateEvent(eventId, event) {
-    return await prisma.event.update({
-      where: {
-        event_id: eventId,
-      },
-      data: event,
+  async updateEvent(eventId, eventData) {
+    // Separate recurrence from event data
+    const { recurrence, ...eventUpdateData } = eventData;
+
+    // Start a transaction to update event and recurrence
+    return await prisma.$transaction(async (tx) => {
+      // Delete existing recurrence if it exists (deleteMany won't error if none exists)
+      await tx.recurrence.deleteMany({
+        where: {
+          event_id: eventId,
+        },
+      });
+
+      // Update the event
+      await tx.event.update({
+        where: {
+          event_id: eventId,
+        },
+        data: eventUpdateData,
+      });
+
+      // Create new recurrence if provided
+      if (recurrence) {
+        await tx.recurrence.create({
+          data: {
+            event_id: eventId,
+            pattern: recurrence.pattern,
+            start_at: recurrence.start_at,
+            end_at: recurrence.end_at,
+            weekdays: recurrence.weekdays || [],
+            monthDays: recurrence.monthDays || [],
+          },
+        });
+      }
+
+      // Fetch the updated event with recurrence
+      return await tx.event.findUnique({
+        where: {
+          event_id: eventId,
+        },
+        include: {
+          recurrence: true,
+        },
+      });
     });
   }
 
@@ -189,13 +230,14 @@ class DatabaseService {
   }
   // find events by user id (excludes deleted events)
   // Expands recurring events into individual occurrences
+  // Also includes events where user has accepted invites
   async findEventsByUserId(userId) {
     const now = new Date();
     const futureEnd = new Date(now);
     futureEnd.setFullYear(futureEnd.getFullYear() + 2); // Look ahead 2 years for recurring events
 
-    // Get all events (including recurring ones that might generate future occurrences)
-    const events = await prisma.event.findMany({
+    // Get all events created by user (including recurring ones that might generate future occurrences)
+    const userEvents = await prisma.event.findMany({
       where: {
         user_id: userId,
         deleted_at: null,
@@ -223,9 +265,31 @@ class DatabaseService {
       },
     });
 
+    // Get events where user has accepted invites
+    const acceptedInvites = await prisma.eventInvite.findMany({
+      where: {
+        invited_user_id: userId,
+        status: "ACCEPTED",
+      },
+      include: {
+        event: {
+          include: {
+            recurrence: true,
+          },
+        },
+      },
+    });
+
+    const invitedEvents = acceptedInvites
+      .map((invite) => invite.event)
+      .filter((event) => event.deleted_at === null);
+
+    // Combine user events and invited events
+    const allEvents = [...userEvents, ...invitedEvents];
+
     // Expand recurring events and filter to future occurrences
     const expandedEvents = [];
-    for (const event of events) {
+    for (const event of allEvents) {
       if (event.recurrence) {
         const occurrences = this.expandRecurringEvent(event, now, futureEnd);
         expandedEvents.push(...occurrences);
@@ -251,9 +315,10 @@ class DatabaseService {
 
   // find events by user id and date range (excludes deleted events)
   // Expands recurring events into individual occurrences
+  // Also includes events where user has accepted invites
   async findEventsByUserIdAndDateRange(userId, startDate, endDate) {
-    // Get all events (including those with recurrence that start before the range)
-    const events = await prisma.event.findMany({
+    // Get all events created by user (including those with recurrence that start before the range)
+    const userEvents = await prisma.event.findMany({
       where: {
         user_id: userId,
         deleted_at: null,
@@ -282,9 +347,31 @@ class DatabaseService {
       },
     });
 
+    // Get events where user has accepted invites
+    const acceptedInvites = await prisma.eventInvite.findMany({
+      where: {
+        invited_user_id: userId,
+        status: "ACCEPTED",
+      },
+      include: {
+        event: {
+          include: {
+            recurrence: true,
+          },
+        },
+      },
+    });
+
+    const invitedEvents = acceptedInvites
+      .map((invite) => invite.event)
+      .filter((event) => event.deleted_at === null);
+
+    // Combine user events and invited events
+    const allEvents = [...userEvents, ...invitedEvents];
+
     // Expand recurring events and filter to date range
     const expandedEvents = [];
-    for (const event of events) {
+    for (const event of allEvents) {
       if (event.recurrence) {
         // Expand recurring event
         const occurrences = this.expandRecurringEvent(
@@ -687,6 +774,245 @@ class DatabaseService {
     }
 
     return freeTimes;
+  }
+
+  // Create event invite
+  async createEventInvite(eventId, invitedUserId, invitedById) {
+    // Check if invite already exists
+    const existingInvite = await prisma.eventInvite.findUnique({
+      where: {
+        event_id_invited_user_id: {
+          event_id: eventId,
+          invited_user_id: invitedUserId,
+        },
+      },
+    });
+
+    if (existingInvite) {
+      throw new Error("Invite already exists for this event and user");
+    }
+
+    return await prisma.eventInvite.create({
+      data: {
+        event_id: eventId,
+        invited_user_id: invitedUserId,
+        invited_by_id: invitedById,
+        status: "PENDING",
+      },
+      include: {
+        event: true,
+        invitedUser: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+        invitedBy: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+      },
+    });
+  }
+
+  // Create multiple event invites
+  async createEventInvites(eventId, invitedUserIds, invitedById) {
+    const invites = [];
+    for (const userId of invitedUserIds) {
+      try {
+        const invite = await this.createEventInvite(
+          eventId,
+          userId,
+          invitedById
+        );
+        invites.push(invite);
+      } catch (error) {
+        // Skip if invite already exists
+        if (error.message !== "Invite already exists for this event and user") {
+          throw error;
+        }
+      }
+    }
+    return invites;
+  }
+
+  // Get event invites for a user (received invites)
+  async getEventInvitesForUser(userId, status = null) {
+    const whereClause = {
+      invited_user_id: userId,
+    };
+
+    if (status) {
+      whereClause.status = status;
+    }
+
+    return await prisma.eventInvite.findMany({
+      where: whereClause,
+      include: {
+        event: {
+          include: {
+            user: {
+              select: {
+                user_id: true,
+                username: true,
+                email: true,
+                profile_image_url: true,
+              },
+            },
+          },
+        },
+        invitedBy: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+      },
+      orderBy: {
+        sent_at: "desc",
+      },
+    });
+  }
+
+  // Get pending event invites count for a user
+  async getPendingEventInvitesCount(userId) {
+    return await prisma.eventInvite.count({
+      where: {
+        invited_user_id: userId,
+        status: "PENDING",
+      },
+    });
+  }
+
+  // Update event invite status (accept/decline)
+  // Allows changing from PENDING to ACCEPTED/DECLINED
+  // Also allows changing from ACCEPTED to DECLINED (rejecting after accepting)
+  async updateEventInviteStatus(inviteId, userId, status) {
+    // Verify the invite belongs to the user
+    const invite = await prisma.eventInvite.findUnique({
+      where: {
+        invite_id: inviteId,
+      },
+    });
+
+    if (!invite) {
+      throw new Error("Invite not found");
+    }
+
+    if (invite.invited_user_id !== userId) {
+      throw new Error("You are not authorized to update this invite");
+    }
+
+    // Allow status changes:
+    // - PENDING -> ACCEPTED or DECLINED
+    // - ACCEPTED -> DECLINED (rejecting after accepting)
+    if (invite.status === "PENDING") {
+      // Can change from PENDING to ACCEPTED or DECLINED
+      if (status !== "ACCEPTED" && status !== "DECLINED") {
+        throw new Error("Invalid status change from PENDING");
+      }
+    } else if (invite.status === "ACCEPTED") {
+      // Can only change from ACCEPTED to DECLINED (reject)
+      if (status !== "DECLINED") {
+        throw new Error("Can only reject an accepted invite");
+      }
+    } else {
+      // DECLINED or CANCELLED invites cannot be changed
+      throw new Error(
+        "Invite has already been responded to and cannot be changed"
+      );
+    }
+
+    return await prisma.eventInvite.update({
+      where: {
+        invite_id: inviteId,
+      },
+      data: {
+        status: status,
+        responded_at: new Date(),
+      },
+      include: {
+        event: true,
+        invitedBy: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+      },
+    });
+  }
+
+  // Get invites for an event
+  async getEventInvites(eventId) {
+    return await prisma.eventInvite.findMany({
+      where: {
+        event_id: eventId,
+      },
+      include: {
+        invitedUser: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+        invitedBy: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+      },
+      orderBy: {
+        sent_at: "desc",
+      },
+    });
+  }
+
+  // Get invite for a specific user and event
+  async getUserEventInvite(userId, eventId) {
+    return await prisma.eventInvite.findUnique({
+      where: {
+        event_id_invited_user_id: {
+          event_id: eventId,
+          invited_user_id: userId,
+        },
+      },
+      include: {
+        event: {
+          select: {
+            event_id: true,
+            user_id: true,
+            title: true,
+            description: true,
+            start_at: true,
+            end_at: true,
+          },
+        },
+        invitedBy: {
+          select: {
+            user_id: true,
+            username: true,
+            email: true,
+            profile_image_url: true,
+          },
+        },
+      },
+    });
   }
 
   // Helper method to expand a recurring event into individual occurrences
