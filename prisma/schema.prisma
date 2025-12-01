@@ -34,6 +34,7 @@ model Event {
   created_at  DateTime     @default(now())
   updated_at  DateTime     @updatedAt
   colour      String       @default("#0000af") // default blue colour
+  deleted_at  DateTime?    @db.Timestamptz(6)  // soft delete timestamp
 
   user        User         @relation(fields: [user_id], references: [user_id])
   recurrence  Recurrence?
@@ -42,6 +43,7 @@ model Event {
 
 
   @@index([user_id])
+  @@index([deleted_at])
 }
 
 model Group {
