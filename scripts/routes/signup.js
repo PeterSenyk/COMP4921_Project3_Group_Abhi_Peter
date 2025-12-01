@@ -56,9 +56,15 @@ module.exports = (app) => {
       confirmPassword,
     });
     if (validation.error) {
+      // console.error("Validation error:", validation.error);
       return res.render("signup", {
         title: "Sign Up",
-        error: validation.error.details[0].message,
+        error: `Validation error. Please check your input. 
+          Password must be at least 10 characters long,
+          contain at least one uppercase letter, 
+          one lowercase letter, 
+          one digit, 
+          and one special character`,
         isAuthenticated: false,
         currentURL: req.url,
       });
