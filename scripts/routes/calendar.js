@@ -168,7 +168,7 @@ module.exports = (app) => {
     }
   });
 
-  // API endpoint for deleting events
+  // API endpoint for soft deleting events (marks as deleted)
   app.delete("/api/events/:id", isAuthenticated, async (req, res) => {
     const user = getUserFromSession(req);
 
@@ -183,8 +183,10 @@ module.exports = (app) => {
         return res.status(400).json({ error: "Invalid event ID" });
       }
 
-      // Verify the event exists and belongs to the user
-      const existingEvent = await databaseService.findEvent(eventId);
+      // Verify the event exists and belongs to the user (including deleted events for verification)
+      const existingEvent = await databaseService.findEventIncludingDeleted(
+        eventId
+      );
       if (!existingEvent) {
         return res.status(404).json({ error: "Event not found" });
       }
@@ -195,12 +197,116 @@ module.exports = (app) => {
           .json({ error: "You don't have permission to delete this event" });
       }
 
+      // Check if already deleted
+      if (existingEvent.deleted_at) {
+        return res.status(400).json({ error: "Event is already deleted" });
+      }
+
       await databaseService.deleteEvent(eventId);
 
       res.json({ success: true, message: "Event deleted successfully" });
     } catch (error) {
       console.error("Error deleting event:", error);
       res.status(500).json({ error: "Failed to delete event" });
+    }
+  });
+
+  // API endpoint for restoring deleted events
+  app.post("/api/events/:id/restore", isAuthenticated, async (req, res) => {
+    const user = getUserFromSession(req);
+
+    if (!user || !user.user_id) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const eventId = parseInt(req.params.id);
+
+      if (!eventId || isNaN(eventId)) {
+        return res.status(400).json({ error: "Invalid event ID" });
+      }
+
+      // Verify the event exists and belongs to the user
+      const existingEvent = await databaseService.findEventIncludingDeleted(
+        eventId
+      );
+      if (!existingEvent) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      if (existingEvent.user_id !== user.user_id) {
+        return res
+          .status(403)
+          .json({ error: "You don't have permission to restore this event" });
+      }
+
+      const restoredEvent = await databaseService.restoreEvent(eventId);
+
+      res.json({
+        success: true,
+        message: "Event restored successfully",
+        event: restoredEvent,
+      });
+    } catch (error) {
+      console.error("Error restoring event:", error);
+      if (
+        error.message === "Event is not deleted" ||
+        error.message.includes(
+          "Cannot restore event deleted more than 30 days ago"
+        )
+      ) {
+        return res.status(400).json({ error: error.message });
+      }
+      res.status(500).json({ error: "Failed to restore event" });
+    }
+  });
+
+  // API endpoint for permanently deleting events (hard delete)
+  app.delete("/api/events/:id/permanent", isAuthenticated, async (req, res) => {
+    const user = getUserFromSession(req);
+
+    if (!user || !user.user_id) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
+    try {
+      const eventId = parseInt(req.params.id);
+
+      if (!eventId || isNaN(eventId)) {
+        return res.status(400).json({ error: "Invalid event ID" });
+      }
+
+      // Verify the event exists and belongs to the user
+      const existingEvent = await databaseService.findEventIncludingDeleted(
+        eventId
+      );
+      if (!existingEvent) {
+        return res.status(404).json({ error: "Event not found" });
+      }
+
+      if (existingEvent.user_id !== user.user_id) {
+        return res.status(403).json({
+          error: "You don't have permission to permanently delete this event",
+        });
+      }
+
+      await databaseService.hardDeleteEvent(eventId);
+
+      res.json({
+        success: true,
+        message: "Event permanently deleted",
+      });
+    } catch (error) {
+      console.error("Error permanently deleting event:", error);
+      if (
+        error.message === "Event is not deleted" ||
+        error.message.includes(
+          "Cannot permanently delete event deleted less than 30 days ago"
+        )
+      ) {
+        return res.status(400).json({ error: error.message });
+      }
+      res.status(500).json({ error: "Failed to permanently delete event" });
     }
   });
 

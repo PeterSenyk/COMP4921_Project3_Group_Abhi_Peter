@@ -44,8 +44,18 @@ class DatabaseService {
     });
   }
 
-  // find event
+  // find event (excludes deleted events)
   async findEvent(eventId) {
+    return await prisma.event.findFirst({
+      where: {
+        event_id: eventId,
+        deleted_at: null,
+      },
+    });
+  }
+
+  // find event including deleted ones (for verification purposes)
+  async findEventIncludingDeleted(eventId) {
     return await prisma.event.findUnique({
       where: {
         event_id: eventId,
@@ -63,30 +73,120 @@ class DatabaseService {
     });
   }
 
-  // delete event
+  // soft delete event (marks as deleted instead of actually deleting)
   async deleteEvent(eventId) {
+    return await prisma.event.update({
+      where: {
+        event_id: eventId,
+      },
+      data: {
+        deleted_at: new Date(),
+      },
+    });
+  }
+
+  // restore event (undelete)
+  async restoreEvent(eventId) {
+    const event = await prisma.event.findUnique({
+      where: {
+        event_id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    if (!event.deleted_at) {
+      throw new Error("Event is not deleted");
+    }
+
+    // Check if event was deleted more than 30 days ago
+    const deletedDate = new Date(event.deleted_at);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    if (deletedDate < thirtyDaysAgo) {
+      throw new Error("Cannot restore event deleted more than 30 days ago");
+    }
+
+    return await prisma.event.update({
+      where: {
+        event_id: eventId,
+      },
+      data: {
+        deleted_at: null,
+      },
+    });
+  }
+
+  // hard delete event (permanently remove from database)
+  // Should only be used for events deleted more than 30 days ago
+  async hardDeleteEvent(eventId) {
+    const event = await prisma.event.findUnique({
+      where: {
+        event_id: eventId,
+      },
+    });
+
+    if (!event) {
+      throw new Error("Event not found");
+    }
+
+    if (!event.deleted_at) {
+      throw new Error("Event is not deleted");
+    }
+
+    // Check if event was deleted more than 30 days ago
+    const deletedDate = new Date(event.deleted_at);
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    if (deletedDate >= thirtyDaysAgo) {
+      throw new Error(
+        "Cannot permanently delete event deleted less than 30 days ago"
+      );
+    }
+
     return await prisma.event.delete({
       where: {
         event_id: eventId,
       },
     });
   }
-  // find events by user id
+
+  // find deleted events for a user
+  async findDeletedEvents(userId) {
+    return await prisma.event.findMany({
+      where: {
+        user_id: userId,
+        deleted_at: {
+          not: null,
+        },
+      },
+      orderBy: {
+        deleted_at: "desc",
+      },
+    });
+  }
+  // find events by user id (excludes deleted events)
   async findEventsByUserId(userId) {
     return await prisma.event.findMany({
       where: {
         user_id: userId,
+        deleted_at: null,
         start_at: {
           gte: new Date(),
         },
       },
     });
   }
-  // find events by user id and date
+  // find events by user id and date (excludes deleted events)
   async findEventsByUserIdAndDate(userId, date) {
     return await prisma.event.findMany({
       where: {
         user_id: userId,
+        deleted_at: null,
         start_at: {
           gte: date,
         },
@@ -94,11 +194,12 @@ class DatabaseService {
     });
   }
 
-  // find events by user id and date range (for better performance with date filtering)
+  // find events by user id and date range (excludes deleted events)
   async findEventsByUserIdAndDateRange(userId, startDate, endDate) {
     return await prisma.event.findMany({
       where: {
         user_id: userId,
+        deleted_at: null,
         start_at: {
           gte: startDate,
           lt: endDate,
@@ -315,13 +416,14 @@ class DatabaseService {
     return relationship;
   }
 
-  // find events by friend ids (multiple friends, with optional date range)
+  // find events by friend ids (multiple friends, with optional date range, excludes deleted events)
   async findEventsByFriendIds(friendIds, startDate, endDate) {
     // Build where clause
     const whereClause = {
       user_id: {
         in: friendIds,
       },
+      deleted_at: null, // Exclude deleted events
     };
 
     // Add date range filtering if provided

@@ -45,7 +45,6 @@ app.use("/", (req, res, next) => {
 app.use(express.static(path.join(__dirname, "public")));
 app.use("/utils", express.static(path.join(__dirname, "utils")));
 
-
 app.set("view engine", "ejs");
 
 // routes
@@ -55,6 +54,7 @@ require("./scripts/routes/login")(app);
 require("./scripts/routes/calendar")(app);
 require("./scripts/routes/logout")(app);
 require("./scripts/routes/friends")(app);
+require("./scripts/routes/deleted-events")(app);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);

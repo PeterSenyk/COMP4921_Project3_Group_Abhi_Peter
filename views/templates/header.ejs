@@ -58,7 +58,6 @@
         transition: all 0.3s ease;
         font-weight: 500;
         position: relative;
-
       }
 
       .nav-link:hover {
@@ -69,7 +68,6 @@
       .nav-link.active {
         background: #667eea;
         color: white;
-    
       }
 
       .nav-link.active:hover {
@@ -206,6 +204,12 @@
             href="/friends"
             class="nav-link <%= typeof currentURL !== 'undefined' && currentURL.startsWith('/friends') ? 'active' : '' %>"
             >Friends</a
+          >
+
+          <a
+            href="/deleted-events"
+            class="nav-link <%= typeof currentURL !== 'undefined' && currentURL.startsWith('/deleted-events') ? 'active' : '' %>"
+            >Deleted Events 🗑️</a
           >
 
           <% } else { %>
