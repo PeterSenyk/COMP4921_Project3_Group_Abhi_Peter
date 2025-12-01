@@ -1,0 +1,64 @@
+<%- include('templates/header') %>
+
+<style>
+
+    .profile-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100vh;
+        gap: 2rem;
+    }
+    .profile-header {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 2rem;
+    }
+    table {
+        width: 20rem;
+        border-collapse: collapse;
+        border: 1px solid #000;
+    }
+    td {
+        padding: 0.5rem;
+        border: 1px solid #000;
+    }
+
+    tr:nth-child(even) {
+        background-color: #f0f0f0;
+    }
+    tr:nth-child(odd) {
+        background-color: #fff;
+    }
+
+    td:first-child {
+        font-weight: bold;
+    }
+
+</style>
+
+
+
+<div class="profile-container">
+  <div class="profile-header">
+    <h1>Profile</h1>
+  </div>
+
+  <table>
+
+    <tr>
+      <td>Username:</td>
+      <td><%= user.username %></td>
+    </tr>
+    <tr>
+      <td>Email:</td>
+      <td><%= user.email %></td>
+    </tr>
+    <tr>
+      <td>User ID:</td>
+      <td><%= user.user_id %></td>
+    </tr>
+  </table>
+
+</div>

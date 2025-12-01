@@ -40,6 +40,7 @@ module.exports = (app) => {
       password: joi
         .string()
         .min(10) // minimum length of 10 characters
+        .max(30) // maximum length of 30 characters
         .pattern(/[A-Z]/, "uppercase") // at least one uppercase letter
         .pattern(/[a-z]/, "lowercase") // at least one lowercase letter
         .pattern(/\d/, "digit") // at least one digit
@@ -61,6 +62,7 @@ module.exports = (app) => {
         title: "Sign Up",
         error: `Validation error. Please check your input. 
           Password must be at least 10 characters long,
+          maximum length of 30 characters,
           contain at least one uppercase letter, 
           one lowercase letter, 
           one digit, 

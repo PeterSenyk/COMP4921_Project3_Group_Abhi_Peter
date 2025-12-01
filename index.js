@@ -56,6 +56,7 @@ require("./scripts/routes/logout")(app);
 require("./scripts/routes/friends")(app);
 require("./scripts/routes/deleted-events")(app);
 require("./scripts/routes/event-lists")(app);
+require("./scripts/routes/profile")(app);
 
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
