@@ -19,7 +19,7 @@
 
       .header {
         background: white;
-        padding: 1rem 2rem;
+        padding: 0.5rem 1rem;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         display: flex;
         justify-content: space-between;
@@ -34,6 +34,7 @@
         font-weight: bold;
         color: #333;
         text-decoration: none;
+        flex-shrink: 0;
       }
 
       .logo:hover {
@@ -44,10 +45,9 @@
         display: flex;
         align-items: center;
         gap: 1rem;
-        position: absolute;
-        right: 0;
-        padding-right: 1rem;
-        padding-left: 1rem;
+        justify-content: flex-end;
+        margin-left: auto;
+        flex-shrink: 0;
       }
 
       .nav-link {
@@ -58,6 +58,7 @@
         transition: all 0.3s ease;
         font-weight: 500;
         position: relative;
+
       }
 
       .nav-link:hover {
@@ -68,6 +69,7 @@
       .nav-link.active {
         background: #667eea;
         color: white;
+    
       }
 
       .nav-link.active:hover {
@@ -77,10 +79,8 @@
       .user-info {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        margin-left: 1rem;
-        padding-left: 1rem;
-        border-left: 1px solid #eee;
+        gap: 0.75rem;
+        width: 15rem;
       }
 
       .welcome {
@@ -91,13 +91,14 @@
       .logout-btn {
         background: #dc3545;
         color: white;
-        padding: 0.5rem 1rem;
+        padding: 0.625rem 1.5rem;
         border: none;
         border-radius: 5px;
         text-decoration: none;
         font-weight: 500;
         transition: background 0.3s ease;
         cursor: pointer;
+        flex: 1;
       }
 
       .logout-btn:hover {
@@ -106,12 +107,12 @@
 
       .auth-buttons {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.75rem;
+        width: 15rem;
       }
 
       .btn {
         padding: 0.625rem 1.5rem;
-        border: none;
         border-radius: 5px;
         text-decoration: none;
         font-weight: 500;
@@ -123,22 +124,13 @@
       .btn-primary {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
+        border: none;
+        flex: 1;
       }
 
       .btn-primary:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-      }
-
-      .btn-secondary {
-        background: transparent;
-        color: #667eea;
-        border: 2px solid #667eea;
-      }
-
-      .btn-secondary:hover {
-        background: #667eea;
-        color: white;
       }
 
       .mobile-menu-toggle {
@@ -162,12 +154,13 @@
           right: 0;
           background: white;
           box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-          flex-direction: column;
+          /* flex-direction: column; */
           padding: 1rem;
           gap: 0.5rem;
-          min-width: 150px;
+          min-width: 15rem;
           border-radius: 0 0 5px 5px;
           align-items: flex-end;
+          margin: 1rem;
         }
 
         .nav-links.active {
@@ -193,7 +186,7 @@
   </head>
   <body>
     <div class="header">
-      <a href="/" class="logo">COMP4921 Project</a>
+      <a href="/" class="logo">COMP4921 Project 3</a>
 
       <div class="nav-container">
         <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">
@@ -238,7 +231,7 @@
         <!-- Non-authenticated user buttons -->
         <div class="auth-buttons">
           <a href="/login" class="btn btn-primary">Login</a>
-          <a href="/signup" class="btn btn-secondary">Sign Up</a>
+          <a href="/signup" class="btn btn-primary">Sign Up</a>
         </div>
         <% } %>
       </div>
