@@ -176,6 +176,63 @@
     min-height: 1.5rem;
   }
 
+  .event-modal-invites-list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 0.5rem;
+  }
+
+  .event-modal-invite-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    margin-bottom: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border-left: 4px solid;
+  }
+
+  .event-modal-invite-item.pending {
+    border-left-color: #ffc107;
+  }
+
+  .event-modal-invite-item.accepted {
+    border-left-color: #28a745;
+  }
+
+  .event-modal-invite-item.declined {
+    border-left-color: #dc3545;
+  }
+
+  .event-modal-invite-item.cancelled {
+    border-left-color: #6c757d;
+  }
+
+  .event-modal-invite-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: white;
+  }
+
+  .event-modal-invite-status.pending {
+    background: #ffc107;
+  }
+
+  .event-modal-invite-status.accepted {
+    background: #28a745;
+  }
+
+  .event-modal-invite-status.declined {
+    background: #dc3545;
+  }
+
+  .event-modal-invite-status.cancelled {
+    background: #6c757d;
+  }
+
   .event-modal-footer {
     display: flex;
     gap: 0.5rem;
@@ -218,6 +275,15 @@
   }
 
   .event-modal-btn-delete:hover {
+    background-color: #c82333;
+  }
+
+  .event-modal-btn-reject {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .event-modal-btn-reject:hover {
     background-color: #c82333;
   }
 
@@ -905,6 +971,32 @@
       >
         View Availability
       </button>
+      <button
+        class="friends-sidebar-btn"
+        onclick="showEventInvitesModal()"
+        style="position: relative"
+      >
+        Event Invites
+        <span
+          id="invitesBadge"
+          style="
+            display: none;
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+          "
+        ></span>
+      </button>
     </div>
     <div class="friends-filter-section">
       <div class="friends-filter-toggle">
@@ -976,6 +1068,18 @@
           No description provided
         </div>
       </div>
+      <div
+        class="event-modal-field"
+        id="modalInvitedFriendsField"
+        style="display: none"
+      >
+        <span class="event-modal-label">Invited Friends:</span>
+        <div class="event-modal-value" id="modalInvitedFriends">
+          <div style="font-size: 0.9rem; color: #666; font-style: italic">
+            Loading...
+          </div>
+        </div>
+      </div>
     </div>
     <div class="event-modal-footer">
       <button
@@ -987,7 +1091,7 @@
       <button
         class="event-modal-btn event-modal-btn-edit"
         id="modalEditBtn"
-        onclick="editEventFromModal()"
+        onclick="editEventFromModal(event)"
       >
         Edit
       </button>
@@ -997,6 +1101,14 @@
         onclick="deleteEventFromModal()"
       >
         Delete
+      </button>
+      <button
+        class="event-modal-btn event-modal-btn-reject"
+        id="modalRejectBtn"
+        onclick="rejectEventInviteFromModal()"
+        style="display: none"
+      >
+        Reject Invite
       </button>
     </div>
   </div>
@@ -1276,6 +1388,20 @@
           </div>
         </div>
 
+        <!-- Invite Friends Section -->
+        <div class="event-form-group">
+          <label class="event-form-label">Invite Friends (Optional)</label>
+          <div id="friendsSelectionContainer" style="margin-top: 0.5rem">
+            <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem">
+              Loading friends...
+            </div>
+          </div>
+          <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem">
+            Select friends to invite to this event. They will receive a
+            notification.
+          </div>
+        </div>
+
         <div class="event-form-group">
           <label class="event-form-label">Colour</label>
           <div class="event-form-colour-picker">
@@ -1428,6 +1554,456 @@
           id="formSubmitBtn"
         >
           Create Event
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Event Edit Modal -->
+<div id="eventEditModal" class="event-form-modal">
+  <div class="event-form-modal-content">
+    <div class="event-form-header">
+      <h2 class="event-form-title">Edit Event</h2>
+      <button class="event-form-close" onclick="closeEventEditModal()">
+        &times;
+      </button>
+    </div>
+    <form id="eventEditForm" onsubmit="handleEventEditSubmit(event)">
+      <div class="event-form-body">
+        <div class="event-form-group">
+          <label for="editEventTitle" class="event-form-label required"
+            >Title</label
+          >
+          <input
+            type="text"
+            id="editEventTitle"
+            name="title"
+            class="event-form-input"
+            required
+            placeholder="Enter event title"
+          />
+          <div class="event-form-error" id="editTitleError"></div>
+        </div>
+
+        <div class="event-form-row">
+          <div class="event-form-group">
+            <label for="editEventStart" class="event-form-label required"
+              >Start Date & Time</label
+            >
+            <input
+              type="datetime-local"
+              id="editEventStart"
+              name="start"
+              class="event-form-input"
+              required
+            />
+            <div class="event-form-error" id="editStartError"></div>
+          </div>
+
+          <div class="event-form-group">
+            <label for="editEventEnd" class="event-form-label required"
+              >End Date & Time</label
+            >
+            <input
+              type="datetime-local"
+              id="editEventEnd"
+              name="end"
+              class="event-form-input"
+              required
+            />
+            <div class="event-form-error" id="editEndError"></div>
+          </div>
+        </div>
+
+        <div class="event-form-group">
+          <label for="editEventDescription" class="event-form-label"
+            >Description</label
+          >
+          <textarea
+            id="editEventDescription"
+            name="description"
+            class="event-form-textarea"
+            placeholder="Enter event description (optional)"
+          ></textarea>
+        </div>
+
+        <div class="event-form-group">
+          <div class="event-form-checkbox-group">
+            <input
+              type="checkbox"
+              id="editEventAllDay"
+              name="allDay"
+              class="event-form-checkbox"
+            />
+            <label
+              for="editEventAllDay"
+              class="event-form-label"
+              style="margin: 0"
+            >
+              All Day Event
+            </label>
+          </div>
+        </div>
+
+        <!-- Recurrence Section -->
+        <div class="event-form-group">
+          <label class="event-form-label">Recurrence</label>
+          <select
+            id="editRecurrenceType"
+            name="recurrenceType"
+            class="event-form-input"
+            onchange="handleEditRecurrenceTypeChange()"
+          >
+            <option value="none">No Recurrence</option>
+            <option value="daily">Every Day</option>
+            <option value="weekly">Same Day(s) Every Week</option>
+            <option value="monthly">Same Day(s) Every Month</option>
+          </select>
+
+          <!-- Weekly Recurrence Options -->
+          <div
+            id="editWeeklyRecurrenceOptions"
+            style="display: none; margin-top: 1rem"
+          >
+            <label
+              class="event-form-label"
+              style="font-size: 0.9rem; margin-bottom: 0.5rem"
+            >
+              Select Days of Week:
+            </label>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem">
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.25rem;
+                  cursor: pointer;
+                "
+              >
+                <input
+                  type="checkbox"
+                  name="editRecurrenceWeekday"
+                  value="MONDAY"
+                  class="event-form-checkbox"
+                />
+                <span>Mon</span>
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.25rem;
+                  cursor: pointer;
+                "
+              >
+                <input
+                  type="checkbox"
+                  name="editRecurrenceWeekday"
+                  value="TUESDAY"
+                  class="event-form-checkbox"
+                />
+                <span>Tue</span>
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.25rem;
+                  cursor: pointer;
+                "
+              >
+                <input
+                  type="checkbox"
+                  name="editRecurrenceWeekday"
+                  value="WEDNESDAY"
+                  class="event-form-checkbox"
+                />
+                <span>Wed</span>
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.25rem;
+                  cursor: pointer;
+                "
+              >
+                <input
+                  type="checkbox"
+                  name="editRecurrenceWeekday"
+                  value="THURSDAY"
+                  class="event-form-checkbox"
+                />
+                <span>Thu</span>
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.25rem;
+                  cursor: pointer;
+                "
+              >
+                <input
+                  type="checkbox"
+                  name="editRecurrenceWeekday"
+                  value="FRIDAY"
+                  class="event-form-checkbox"
+                />
+                <span>Fri</span>
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.25rem;
+                  cursor: pointer;
+                "
+              >
+                <input
+                  type="checkbox"
+                  name="editRecurrenceWeekday"
+                  value="SATURDAY"
+                  class="event-form-checkbox"
+                />
+                <span>Sat</span>
+              </label>
+              <label
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 0.25rem;
+                  cursor: pointer;
+                "
+              >
+                <input
+                  type="checkbox"
+                  name="editRecurrenceWeekday"
+                  value="SUNDAY"
+                  class="event-form-checkbox"
+                />
+                <span>Sun</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Monthly Recurrence Options -->
+          <div
+            id="editMonthlyRecurrenceOptions"
+            style="display: none; margin-top: 1rem"
+          >
+            <label
+              class="event-form-label"
+              style="font-size: 0.9rem; margin-bottom: 0.5rem"
+            >
+              Select Days of Month (1-31):
+            </label>
+            <input
+              type="text"
+              id="editRecurrenceMonthDays"
+              name="editRecurrenceMonthDays"
+              class="event-form-input"
+              placeholder="e.g., 1, 15 (comma-separated)"
+              style="font-size: 0.9rem"
+            />
+            <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem">
+              Enter day numbers separated by commas (e.g., 1, 15 for 1st and
+              15th)
+            </div>
+          </div>
+
+          <!-- Recurrence End Date (optional) -->
+          <div
+            id="editRecurrenceEndDateOptions"
+            style="display: none; margin-top: 1rem"
+          >
+            <label
+              for="editRecurrenceEndDate"
+              class="event-form-label"
+              style="font-size: 0.9rem; margin-bottom: 0.5rem"
+            >
+              End Date (Optional):
+            </label>
+            <input
+              type="date"
+              id="editRecurrenceEndDate"
+              name="editRecurrenceEndDate"
+              class="event-form-input"
+              style="font-size: 0.9rem"
+            />
+            <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem">
+              Leave empty for no end date
+            </div>
+          </div>
+        </div>
+
+        <!-- Invite Friends Section -->
+        <div class="event-form-group">
+          <label class="event-form-label">Invite Friends (Optional)</label>
+          <div id="editFriendsSelectionContainer" style="margin-top: 0.5rem">
+            <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem">
+              Loading friends...
+            </div>
+          </div>
+          <div style="font-size: 0.8rem; color: #666; margin-top: 0.25rem">
+            Select friends to invite to this event. They will receive a
+            notification.
+          </div>
+        </div>
+
+        <div class="event-form-group">
+          <label class="event-form-label">Colour</label>
+          <div class="event-form-colour-picker">
+            <div class="event-form-colour-options" id="editColourOptions">
+              <div
+                class="event-form-colour-option"
+                data-colour="#0096c7"
+                style="background-color: #0096c7"
+                title="Blue Green"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#0096c7"
+                  id="edit-colour-blue-green"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#dc3545"
+                style="background-color: #dc3545"
+                title="Red"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#dc3545"
+                  id="edit-colour-red"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#28a745"
+                style="background-color: #28a745"
+                title="Green"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#28a745"
+                  id="edit-colour-green"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#ffc107"
+                style="background-color: #ffc107"
+                title="Yellow"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#ffc107"
+                  id="edit-colour-yellow"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#17a2b8"
+                style="background-color: #17a2b8"
+                title="Cyan"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#17a2b8"
+                  id="edit-colour-cyan"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#6f42c1"
+                style="background-color: #6f42c1"
+                title="Purple"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#6f42c1"
+                  id="edit-colour-purple"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#fd7e14"
+                style="background-color: #fd7e14"
+                title="Orange"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#fd7e14"
+                  id="edit-colour-orange"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#e83e8c"
+                style="background-color: #e83e8c"
+                title="Pink"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#e83e8c"
+                  id="edit-colour-pink"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#20c997"
+                style="background-color: #20c997"
+                title="Teal"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#20c997"
+                  id="edit-colour-teal"
+                />
+              </div>
+              <div
+                class="event-form-colour-option"
+                data-colour="#9d4edd"
+                style="background-color: #9d4edd"
+                title="Lavender"
+              >
+                <input
+                  type="radio"
+                  name="editColour"
+                  value="#9d4edd"
+                  id="edit-colour-lavender"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="event-form-footer">
+        <button
+          type="button"
+          class="event-form-btn event-form-btn-cancel"
+          onclick="closeEventEditModal()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="event-form-btn event-form-btn-submit"
+          id="editFormSubmitBtn"
+        >
+          Update Event
         </button>
       </div>
     </form>
@@ -2049,6 +2625,270 @@
       closeAvailabilityModal();
     }
   });
+
+  // Event Invites Modal Functions
+  let eventInvites = [];
+  let pendingInvitesCount = <%- pendingInvitesCount || 0 %>;
+
+  // Update pending invites count badge
+  function updateInvitesBadge() {
+    const badge = document.getElementById("invitesBadge");
+    if (badge) {
+      if (pendingInvitesCount > 0) {
+        badge.textContent = pendingInvitesCount;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+    }
+  }
+
+  // Load event invites (both pending and accepted)
+  async function loadEventInvites() {
+    try {
+      // Load pending invites
+      const pendingResponse = await fetch("/api/event-invites?status=PENDING");
+      if (!pendingResponse.ok) {
+        throw new Error("Failed to fetch pending event invites");
+      }
+      const pendingInvites = await pendingResponse.json();
+
+      // Load accepted invites (so users can decline them)
+      const acceptedResponse = await fetch("/api/event-invites?status=ACCEPTED");
+      if (!acceptedResponse.ok) {
+        throw new Error("Failed to fetch accepted event invites");
+      }
+      const acceptedInvites = await acceptedResponse.json();
+
+      // Combine both lists
+      eventInvites = [...pendingInvites, ...acceptedInvites];
+      renderEventInvites();
+      updateInvitesBadge();
+    } catch (error) {
+      console.error("Error loading event invites:", error);
+    }
+  }
+
+  // Render event invites in modal
+  function renderEventInvites() {
+    const content = document.getElementById("invitesContent");
+    if (!content) return;
+
+    if (eventInvites.length === 0) {
+      content.innerHTML =
+        '<div style="text-align: center; padding: 2rem; color: #666; font-style: italic">No event invites</div>';
+      return;
+    }
+
+    // Separate pending and accepted invites
+    const pendingInvites = eventInvites.filter(invite => invite.status === "PENDING");
+    const acceptedInvites = eventInvites.filter(invite => invite.status === "ACCEPTED");
+
+    let html = "";
+
+    // Render pending invites
+    if (pendingInvites.length > 0) {
+      html += '<div style="margin-bottom: 1.5rem"><h3 style="font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 0.75rem">Pending Invites</h3>';
+      html += pendingInvites
+        .map(
+          (invite) => `
+        <div class="invite-item" style="padding: 1rem; margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 5px; background: white">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem">
+            <div>
+              <div style="font-weight: 600; color: #333; margin-bottom: 0.25rem">${invite.event.title}</div>
+              <div style="font-size: 0.9rem; color: #666">
+                From: ${invite.invitedBy ? invite.invitedBy.username : "Unknown"}
+              </div>
+              <div style="font-size: 0.9rem; color: #666; margin-top: 0.25rem">
+                ${new Date(invite.event.start_at).toLocaleString("en-US", {
+                  weekday: "short",
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })} - ${new Date(invite.event.end_at).toLocaleString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })}
+              </div>
+              ${invite.event.description ? `<div style="font-size: 0.85rem; color: #888; margin-top: 0.5rem; font-style: italic">${invite.event.description}</div>` : ""}
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem">
+            <button
+              onclick="acceptEventInvite(${invite.invite_id})"
+              style="flex: 1; padding: 0.5rem; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 500"
+              onmouseover="this.style.background='#218838'"
+              onmouseout="this.style.background='#28a745'"
+            >
+              Accept
+            </button>
+            <button
+              onclick="declineEventInvite(${invite.invite_id})"
+              style="flex: 1; padding: 0.5rem; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 500"
+              onmouseover="this.style.background='#c82333'"
+              onmouseout="this.style.background='#dc3545'"
+            >
+              Decline
+            </button>
+          </div>
+        </div>
+      `
+        )
+        .join("");
+      html += "</div>";
+    }
+
+    // Render accepted invites
+    if (acceptedInvites.length > 0) {
+      html += '<div style="margin-bottom: 1.5rem"><h3 style="font-size: 1.1rem; font-weight: 600; color: #333; margin-bottom: 0.75rem">Accepted Invites</h3>';
+      html += acceptedInvites
+        .map(
+          (invite) => `
+        <div class="invite-item" style="padding: 1rem; margin-bottom: 1rem; border: 1px solid #28a745; border-radius: 5px; background: #f0f9f4">
+          <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem">
+            <div>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem">
+                <div style="font-weight: 600; color: #333">${invite.event.title}</div>
+                <span style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: #28a745; color: white; border-radius: 3px; font-weight: 500">Accepted</span>
+              </div>
+              <div style="font-size: 0.9rem; color: #666">
+                From: ${invite.invitedBy ? invite.invitedBy.username : "Unknown"}
+              </div>
+              <div style="font-size: 0.9rem; color: #666; margin-top: 0.25rem">
+                ${new Date(invite.event.start_at).toLocaleString("en-US", {
+                  weekday: "short",
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })} - ${new Date(invite.event.end_at).toLocaleString("en-US", {
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+          })}
+              </div>
+              ${invite.event.description ? `<div style="font-size: 0.85rem; color: #888; margin-top: 0.5rem; font-style: italic">${invite.event.description}</div>` : ""}
+            </div>
+          </div>
+          <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem">
+            <button
+              onclick="declineEventInvite(${invite.invite_id})"
+              style="flex: 1; padding: 0.5rem; background: #dc3545; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: 500"
+              onmouseover="this.style.background='#c82333'"
+              onmouseout="this.style.background='#dc3545'"
+            >
+              Decline
+            </button>
+          </div>
+        </div>
+      `
+        )
+        .join("");
+      html += "</div>";
+    }
+
+    content.innerHTML = html;
+  }
+
+  // Show event invites modal
+  window.showEventInvitesModal = function () {
+    const modal = document.getElementById("eventInvitesModal");
+    if (modal) {
+      modal.classList.add("show");
+      loadEventInvites();
+    }
+  };
+
+  // Close event invites modal
+  window.closeEventInvitesModal = function () {
+    const modal = document.getElementById("eventInvitesModal");
+    if (modal) {
+      modal.classList.remove("show");
+    }
+  };
+
+  // Accept event invite
+  window.acceptEventInvite = async function (inviteId) {
+    try {
+      const response = await fetch(`/api/event-invites/${inviteId}/accept`, {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        alert("Failed to accept invite: " + data.error);
+      } else {
+        // Reload invites and refresh calendar
+        pendingInvitesCount--;
+        await loadEventInvites();
+        window.calendar.refetchEvents();
+        alert("Event invite accepted!");
+      }
+    } catch (error) {
+      console.error("Error accepting invite:", error);
+      alert("Failed to accept invite. Please try again.");
+    }
+  };
+
+  // Decline event invite
+  window.declineEventInvite = async function (inviteId) {
+    try {
+      const response = await fetch(`/api/event-invites/${inviteId}/decline`, {
+        method: "POST",
+      });
+      const data = await response.json();
+
+      if (data.error) {
+        alert("Failed to decline invite: " + data.error);
+      } else {
+        // Reload invites and refresh calendar
+        const invite = eventInvites.find(inv => inv.invite_id === inviteId);
+        if (invite && invite.status === "PENDING") {
+          pendingInvitesCount--;
+        }
+        await loadEventInvites();
+        window.calendar.refetchEvents();
+        alert("Event invite declined. The event has been removed from your calendar.");
+      }
+    } catch (error) {
+      console.error("Error declining invite:", error);
+      alert("Failed to decline invite. Please try again.");
+    }
+  };
+
+  // Load invites on page load
+  document.addEventListener("DOMContentLoaded", function () {
+    loadEventInvites();
+    updateInvitesBadge();
+  });
 </script>
+
+<!-- Event Invites Modal -->
+<div id="eventInvitesModal" class="availability-modal">
+  <div class="availability-modal-content">
+    <div class="availability-modal-header">
+      <h2 class="availability-modal-title">Event Invites</h2>
+      <button
+        class="availability-modal-close"
+        onclick="closeEventInvitesModal()"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="availability-modal-body">
+      <div id="invitesContent">
+        <div style="text-align: center; padding: 2rem; color: #666">
+          Loading invites...
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <%- include('templates/footer') %>
