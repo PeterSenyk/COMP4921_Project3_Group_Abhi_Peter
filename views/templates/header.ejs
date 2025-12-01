@@ -324,11 +324,7 @@
           <% const hideNavOnAuthPages = typeof currentURL !== 'undefined' &&
           (currentURL.startsWith('/login') || currentURL.startsWith('/signup'));
           %> <% if (!hideNavOnAuthPages) { %>
-          <a
-            href="/calendar"
-            class="nav-link <%= typeof currentURL !== 'undefined' && currentURL.startsWith('/calendar') ? 'active' : '' %>"
-            >Calendar</a
-          >
+  
           <% } %> <% } %>
         </div>
 

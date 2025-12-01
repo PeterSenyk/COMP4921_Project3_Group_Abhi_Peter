@@ -7,7 +7,7 @@ const mongodb_host = process.env.MONGODB_HOST;
 const mongodb_session_secret = process.env.MONGODB_SESSION_SECRET;
 
 // Session expiry time (7 days)
-const expirytime = 7 * 24 * 1000 * 60 * 60; // 7 days in milliseconds
+const expirytime = 24 * 1000 * 60 * 60; // 24 hours in milliseconds
 const saltRounds = 12; // bcrypt salt rounds
 
 // Session store using MongoDB (only for sessions, not user data)
