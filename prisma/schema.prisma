@@ -85,12 +85,14 @@ model Friend {
 }
 
 model Recurrence {
-  recurrence_id Int      @id @default(autoincrement())
-  event_id      Int      @unique
+  recurrence_id Int       @id @default(autoincrement())
+  event_id      Int       @unique
   pattern       Reoccur
-  interval      Int      @default(1)
-  start_at      DateTime @default(now())
+  interval      Int       @default(1)
+  start_at      DateTime  @default(now())
   end_at        DateTime?
+  weekdays      Weekday[] // For weekly recurrence: which days of the week (e.g., SATURDAY, SUNDAY)
+  monthDays     Int[]     // For monthly recurrence: which days of the month (e.g., 1, 15)
 
   event Event @relation(fields: [event_id], references: [event_id])
 }
