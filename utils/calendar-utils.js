@@ -322,6 +322,10 @@ document.addEventListener("DOMContentLoaded", function () {
       if (radio) radio.checked = false;
     });
 
+    // Reset recurrence options
+    document.getElementById("recurrenceType").value = "none";
+    window.handleRecurrenceTypeChange();
+
     if (event) {
       // Edit mode - pre-fill form with event data
       formTitle.textContent = "Edit Event";
@@ -399,6 +403,30 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
+  // Function to handle recurrence type change
+  window.handleRecurrenceTypeChange = function () {
+    const recurrenceType = document.getElementById("recurrenceType").value;
+    const weeklyOptions = document.getElementById("weeklyRecurrenceOptions");
+    const monthlyOptions = document.getElementById("monthlyRecurrenceOptions");
+    const endDateOptions = document.getElementById("recurrenceEndDateOptions");
+
+    // Hide all options first
+    weeklyOptions.style.display = "none";
+    monthlyOptions.style.display = "none";
+    endDateOptions.style.display = "none";
+
+    // Show relevant options based on type
+    if (recurrenceType === "weekly") {
+      weeklyOptions.style.display = "block";
+      endDateOptions.style.display = "block";
+    } else if (recurrenceType === "monthly") {
+      monthlyOptions.style.display = "block";
+      endDateOptions.style.display = "block";
+    } else if (recurrenceType === "daily") {
+      endDateOptions.style.display = "block";
+    }
+  };
+
   // Function to handle form submission
   window.handleEventFormSubmit = function (e) {
     e.preventDefault();
@@ -420,6 +448,47 @@ document.addEventListener("DOMContentLoaded", function () {
     // Get selected colour
     const colourRadio = document.querySelector('input[name="colour"]:checked');
     const colour = colourRadio ? colourRadio.value : "#0000af"; // Default to blue
+
+    // Get recurrence data
+    const recurrenceType = document.getElementById("recurrenceType").value;
+    let recurrenceWeekdays = null;
+    let recurrenceMonthDays = null;
+    const recurrenceEndDate =
+      document.getElementById("recurrenceEndDate").value || null;
+
+    if (recurrenceType === "weekly") {
+      const weekdayCheckboxes = document.querySelectorAll(
+        'input[name="recurrenceWeekday"]:checked'
+      );
+      if (weekdayCheckboxes.length === 0) {
+        alert(
+          "Please select at least one day of the week for weekly recurrence"
+        );
+        return;
+      }
+      recurrenceWeekdays = Array.from(weekdayCheckboxes).map((cb) => cb.value);
+    } else if (recurrenceType === "monthly") {
+      const monthDaysInput = document
+        .getElementById("recurrenceMonthDays")
+        .value.trim();
+      if (!monthDaysInput) {
+        alert(
+          "Please enter at least one day of the month for monthly recurrence"
+        );
+        return;
+      }
+      recurrenceMonthDays = monthDaysInput
+        .split(",")
+        .map((day) => day.trim())
+        .filter((day) => {
+          const dayNum = parseInt(day);
+          return !isNaN(dayNum) && dayNum >= 1 && dayNum <= 31;
+        });
+      if (recurrenceMonthDays.length === 0) {
+        alert("Please enter valid day numbers (1-31) for monthly recurrence");
+        return;
+      }
+    }
 
     // Validation
     let hasErrors = false;
@@ -461,6 +530,10 @@ document.addEventListener("DOMContentLoaded", function () {
       description: description || null,
       allDay: allDay,
       colour: colour,
+      recurrenceType: recurrenceType,
+      recurrenceWeekdays: recurrenceWeekdays,
+      recurrenceMonthDays: recurrenceMonthDays,
+      recurrenceEndDate: recurrenceEndDate,
     };
 
     if (mode === "edit") {
@@ -519,20 +592,25 @@ document.addEventListener("DOMContentLoaded", function () {
             submitBtn.disabled = false;
             submitBtn.textContent = "Create Event";
           } else {
-            // Add the new event to the calendar
-            window.calendar.addEvent({
-              id: data.event_id.toString(),
-              title: data.title,
-              start: data.start_at,
-              end: data.end_at,
-              color: data.colour || "#0000af",
-              description: data.description,
-              extendedProps: {
-                event_id: data.event_id,
-                user_id: data.user_id,
+            // If it's a recurring event, refetch all events to show all occurrences
+            // Otherwise, just add the single event
+            if (recurrenceType && recurrenceType !== "none") {
+              window.calendar.refetchEvents();
+            } else {
+              window.calendar.addEvent({
+                id: data.event_id.toString(),
+                title: data.title,
+                start: data.start_at,
+                end: data.end_at,
+                color: data.colour || "#0000af",
                 description: data.description,
-              },
-            });
+                extendedProps: {
+                  event_id: data.event_id,
+                  user_id: data.user_id,
+                  description: data.description,
+                },
+              });
+            }
             closeEventFormModal();
             alert("Event created successfully!");
           }

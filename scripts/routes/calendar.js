@@ -63,7 +63,18 @@ module.exports = (app) => {
     }
 
     try {
-      const { title, start, end, allDay, description, colour } = req.body;
+      const {
+        title,
+        start,
+        end,
+        allDay,
+        description,
+        colour,
+        recurrenceType,
+        recurrenceWeekdays,
+        recurrenceMonthDays,
+        recurrenceEndDate,
+      } = req.body;
 
       if (!title || !title.trim()) {
         return res.status(400).json({ error: "Event title is required" });
@@ -87,6 +98,37 @@ module.exports = (app) => {
         description: description || null,
         colour: colour || "#0000af", // Use provided color or default to blue
       };
+
+      // Handle recurrence if specified
+      if (recurrenceType && recurrenceType !== "none") {
+        const recurrence = {
+          pattern: recurrenceType.toUpperCase(), // DAILY, WEEKLY, MONTHLY
+          start_at: startDate,
+          end_at: recurrenceEndDate ? new Date(recurrenceEndDate) : null,
+        };
+
+        if (
+          recurrenceType === "weekly" &&
+          recurrenceWeekdays &&
+          recurrenceWeekdays.length > 0
+        ) {
+          // Map weekday strings to enum values
+          recurrence.weekdays = recurrenceWeekdays.map((wd) =>
+            wd.toUpperCase()
+          );
+        } else if (
+          recurrenceType === "monthly" &&
+          recurrenceMonthDays &&
+          recurrenceMonthDays.length > 0
+        ) {
+          // Ensure month days are valid (1-31)
+          recurrence.monthDays = recurrenceMonthDays
+            .map((day) => parseInt(day))
+            .filter((day) => day >= 1 && day <= 31);
+        }
+
+        eventData.recurrence = recurrence;
+      }
 
       const newEvent = await databaseService.createEvent(eventData);
 

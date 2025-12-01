@@ -37,11 +37,29 @@ class DatabaseService {
     });
   }
 
-  // create event
+  // create event (with optional recurrence)
   async createEvent(event) {
-    return await prisma.event.create({
-      data: event,
-    });
+    const { recurrence, ...eventData } = event;
+
+    if (recurrence) {
+      // Create event with recurrence
+      return await prisma.event.create({
+        data: {
+          ...eventData,
+          recurrence: {
+            create: recurrence,
+          },
+        },
+        include: {
+          recurrence: true,
+        },
+      });
+    } else {
+      // Create event without recurrence
+      return await prisma.event.create({
+        data: eventData,
+      });
+    }
   }
 
   // find event (excludes deleted events)
@@ -170,16 +188,53 @@ class DatabaseService {
     });
   }
   // find events by user id (excludes deleted events)
+  // Expands recurring events into individual occurrences
   async findEventsByUserId(userId) {
-    return await prisma.event.findMany({
+    const now = new Date();
+    const futureEnd = new Date(now);
+    futureEnd.setFullYear(futureEnd.getFullYear() + 2); // Look ahead 2 years for recurring events
+
+    // Get all events (including recurring ones that might generate future occurrences)
+    const events = await prisma.event.findMany({
       where: {
         user_id: userId,
         deleted_at: null,
-        start_at: {
-          gte: new Date(),
-        },
+        OR: [
+          // Regular events in the future
+          {
+            start_at: {
+              gte: now,
+            },
+            recurrence: null,
+          },
+          // Recurring events
+          {
+            recurrence: {
+              isNot: null,
+            },
+          },
+        ],
+      },
+      include: {
+        recurrence: true,
+      },
+      orderBy: {
+        start_at: "asc",
       },
     });
+
+    // Expand recurring events and filter to future occurrences
+    const expandedEvents = [];
+    for (const event of events) {
+      if (event.recurrence) {
+        const occurrences = this.expandRecurringEvent(event, now, futureEnd);
+        expandedEvents.push(...occurrences);
+      } else {
+        expandedEvents.push(event);
+      }
+    }
+
+    return expandedEvents;
   }
   // find events by user id and date (excludes deleted events)
   async findEventsByUserIdAndDate(userId, date) {
@@ -195,20 +250,56 @@ class DatabaseService {
   }
 
   // find events by user id and date range (excludes deleted events)
+  // Expands recurring events into individual occurrences
   async findEventsByUserIdAndDateRange(userId, startDate, endDate) {
-    return await prisma.event.findMany({
+    // Get all events (including those with recurrence that start before the range)
+    const events = await prisma.event.findMany({
       where: {
         user_id: userId,
         deleted_at: null,
-        start_at: {
-          gte: startDate,
-          lt: endDate,
-        },
+        OR: [
+          // Regular events within date range
+          {
+            start_at: {
+              gte: startDate,
+              lt: endDate,
+            },
+            recurrence: null, // Non-recurring events
+          },
+          // Recurring events that might generate occurrences in the range
+          {
+            recurrence: {
+              isNot: null,
+            },
+          },
+        ],
+      },
+      include: {
+        recurrence: true,
       },
       orderBy: {
         start_at: "asc",
       },
     });
+
+    // Expand recurring events and filter to date range
+    const expandedEvents = [];
+    for (const event of events) {
+      if (event.recurrence) {
+        // Expand recurring event
+        const occurrences = this.expandRecurringEvent(
+          event,
+          startDate,
+          endDate
+        );
+        expandedEvents.push(...occurrences);
+      } else {
+        // Regular event, add as-is
+        expandedEvents.push(event);
+      }
+    }
+
+    return expandedEvents;
   }
 
   // find today's events for a user (excludes deleted events)
@@ -596,6 +687,166 @@ class DatabaseService {
     }
 
     return freeTimes;
+  }
+
+  // Helper method to expand a recurring event into individual occurrences
+  expandRecurringEvent(event, startDate, endDate) {
+    const { recurrence } = event;
+    if (!recurrence) return [];
+
+    const occurrences = [];
+    const eventStart = new Date(event.start_at);
+    const eventEnd = new Date(event.end_at);
+    const duration = eventEnd.getTime() - eventStart.getTime(); // Duration in milliseconds
+
+    // Determine the effective start date (max of event start and requested start)
+    const effectiveStart = new Date(
+      Math.max(eventStart.getTime(), startDate.getTime())
+    );
+    const recurrenceEnd = recurrence.end_at
+      ? new Date(recurrence.end_at)
+      : null;
+    const finalEnd =
+      recurrenceEnd && recurrenceEnd < endDate ? recurrenceEnd : endDate;
+
+    // Map weekday enum to JavaScript day numbers (0 = Sunday, 1 = Monday, ..., 6 = Saturday)
+    const weekdayMap = {
+      SUNDAY: 0,
+      MONDAY: 1,
+      TUESDAY: 2,
+      WEDNESDAY: 3,
+      THURSDAY: 4,
+      FRIDAY: 5,
+      SATURDAY: 6,
+    };
+
+    if (recurrence.pattern === "DAILY") {
+      // Every day
+      let currentDate = new Date(effectiveStart);
+      currentDate.setHours(
+        eventStart.getHours(),
+        eventStart.getMinutes(),
+        eventStart.getSeconds(),
+        0
+      );
+
+      while (currentDate <= finalEnd) {
+        if (currentDate >= startDate) {
+          const occurrenceEnd = new Date(currentDate.getTime() + duration);
+          occurrences.push({
+            ...event,
+            start_at: new Date(currentDate),
+            end_at: occurrenceEnd,
+          });
+        }
+        currentDate.setDate(currentDate.getDate() + 1);
+      }
+    } else if (
+      recurrence.pattern === "WEEKLY" &&
+      recurrence.weekdays &&
+      recurrence.weekdays.length > 0
+    ) {
+      // Same day(s) every week
+      let currentDate = new Date(effectiveStart);
+      currentDate.setHours(
+        eventStart.getHours(),
+        eventStart.getMinutes(),
+        eventStart.getSeconds(),
+        0
+      );
+
+      // Convert weekday enums to day numbers
+      const targetDays = recurrence.weekdays.map((wd) => weekdayMap[wd]);
+
+      // Start from the beginning of the week containing effectiveStart
+      const dayOfWeek = currentDate.getDay();
+      currentDate.setDate(currentDate.getDate() - dayOfWeek); // Go to Sunday of that week
+
+      // Generate occurrences for up to 2 years (104 weeks) or until finalEnd
+      const maxIterations = 104;
+      let iterations = 0;
+
+      while (currentDate <= finalEnd && iterations < maxIterations) {
+        for (const targetDay of targetDays) {
+          const occurrenceDate = new Date(currentDate);
+          occurrenceDate.setDate(occurrenceDate.getDate() + targetDay);
+          occurrenceDate.setHours(
+            eventStart.getHours(),
+            eventStart.getMinutes(),
+            eventStart.getSeconds(),
+            0
+          );
+
+          if (occurrenceDate >= startDate && occurrenceDate <= finalEnd) {
+            const occurrenceEnd = new Date(occurrenceDate.getTime() + duration);
+            occurrences.push({
+              ...event,
+              start_at: new Date(occurrenceDate),
+              end_at: occurrenceEnd,
+            });
+          }
+        }
+        currentDate.setDate(currentDate.getDate() + 7); // Move to next week
+        iterations++;
+      }
+    } else if (
+      recurrence.pattern === "MONTHLY" &&
+      recurrence.monthDays &&
+      recurrence.monthDays.length > 0
+    ) {
+      // Same day(s) every month
+      let currentDate = new Date(effectiveStart);
+      currentDate.setDate(1); // Start from first day of month
+      currentDate.setHours(
+        eventStart.getHours(),
+        eventStart.getMinutes(),
+        eventStart.getSeconds(),
+        0
+      );
+
+      // Generate occurrences for up to 2 years (24 months) or until finalEnd
+      const maxIterations = 24;
+      let iterations = 0;
+
+      while (currentDate <= finalEnd && iterations < maxIterations) {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        for (const dayOfMonth of recurrence.monthDays) {
+          // Check if the day exists in this month (e.g., Feb 30 doesn't exist)
+          const daysInMonth = new Date(year, month + 1, 0).getDate();
+          if (dayOfMonth <= daysInMonth) {
+            const occurrenceDate = new Date(year, month, dayOfMonth);
+            occurrenceDate.setHours(
+              eventStart.getHours(),
+              eventStart.getMinutes(),
+              eventStart.getSeconds(),
+              0
+            );
+
+            if (occurrenceDate >= startDate && occurrenceDate <= finalEnd) {
+              const occurrenceEnd = new Date(
+                occurrenceDate.getTime() + duration
+              );
+              occurrences.push({
+                ...event,
+                start_at: new Date(occurrenceDate),
+                end_at: occurrenceEnd,
+              });
+            }
+          }
+        }
+
+        // Move to next month
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        iterations++;
+      }
+    }
+
+    // Sort by start date
+    occurrences.sort((a, b) => a.start_at.getTime() - b.start_at.getTime());
+
+    return occurrences;
   }
 }
 
