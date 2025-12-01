@@ -1653,7 +1653,7 @@
             id="editRecurrenceType"
             name="recurrenceType"
             class="event-form-input"
-            onchange="handleEditRecurrenceTypeChange()"
+            onchange="handleRecurrenceTypeChange('edit')"
           >
             <option value="none">No Recurrence</option>
             <option value="daily">Every Day</option>
@@ -2007,65 +2007,6 @@
         </button>
       </div>
     </form>
-  </div>
-</div>
-
-<!-- Availability Modal -->
-<div id="availabilityModal" class="availability-modal">
-  <div class="availability-modal-content">
-    <div class="availability-modal-header">
-      <h2 class="availability-modal-title">Friends' Availability</h2>
-      <button
-        class="availability-modal-close"
-        onclick="closeAvailabilityModal()"
-      >
-        &times;
-      </button>
-    </div>
-    <div class="availability-modal-body">
-      <div class="availability-date-range">
-        <div class="availability-date-input-group">
-          <label for="availabilityStartDate" class="availability-date-label">
-            Start Date
-          </label>
-          <input
-            type="date"
-            id="availabilityStartDate"
-            class="availability-date-input"
-            required
-          />
-        </div>
-        <div class="availability-date-input-group">
-          <label for="availabilityEndDate" class="availability-date-label">
-            End Date
-          </label>
-          <input
-            type="date"
-            id="availabilityEndDate"
-            class="availability-date-input"
-            required
-          />
-        </div>
-        <button
-          class="availability-load-btn"
-          onclick="loadAvailability()"
-          id="loadAvailabilityBtn"
-        >
-          Load Availability
-        </button>
-      </div>
-      <div
-        id="availabilityError"
-        class="availability-error"
-        style="display: none"
-      ></div>
-      <div id="availabilityContent">
-        <div class="availability-empty">
-          Select a date range and click "Load Availability" to see when your
-          friends are free or busy.
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 

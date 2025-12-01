@@ -490,11 +490,12 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   }
 
-  // Function to select a colour option
-  function selectColourOption(colour) {
-    const colourOptions = document.querySelectorAll(
-      ".event-form-colour-option"
-    );
+  // Function to select a colour option (works for both create and edit forms)
+  function selectColourOption(
+    colour,
+    containerSelector = ".event-form-colour-option"
+  ) {
+    const colourOptions = document.querySelectorAll(containerSelector);
     colourOptions.forEach((option) => {
       option.classList.remove("selected");
       const radio = option.querySelector('input[type="radio"]');
@@ -664,7 +665,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Reset form
     form.reset();
-    clearEditFormErrors();
+    clearFormErrors("#eventEditForm .event-form-error");
 
     // Reset color selection
     const colourOptions = document.querySelectorAll(
@@ -678,7 +679,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Reset recurrence options
     document.getElementById("editRecurrenceType").value = "none";
-    handleEditRecurrenceTypeChange();
+    handleRecurrenceTypeChange("edit");
 
     // Load event data including recurrence and invites
     try {
@@ -708,7 +709,10 @@ document.addEventListener("DOMContentLoaded", function () {
         event.color ||
         event.extendedProps.colour ||
         "#0096c7";
-      selectEditColourOption(eventColor);
+      selectColourOption(
+        eventColor,
+        "#editColourOptions .event-form-colour-option"
+      );
 
       // Set recurrence if exists
       if (eventData.recurrence) {
@@ -738,7 +742,7 @@ document.addEventListener("DOMContentLoaded", function () {
             .toISOString()
             .split("T")[0];
         }
-        handleEditRecurrenceTypeChange();
+        handleRecurrenceTypeChange("edit");
       }
 
       // Load friends for invite selection
@@ -763,7 +767,10 @@ document.addEventListener("DOMContentLoaded", function () {
         event.extendedProps.description || "";
 
       const eventColor = event.color || event.extendedProps.colour || "#0096c7";
-      selectEditColourOption(eventColor);
+      selectColourOption(
+        eventColor,
+        "#editColourOptions .event-form-colour-option"
+      );
 
       form.dataset.eventId = eventId;
 
@@ -781,20 +788,9 @@ document.addEventListener("DOMContentLoaded", function () {
     const form = document.getElementById("eventEditForm");
     editModal.classList.remove("show");
     form.reset();
-    clearEditFormErrors();
+    clearFormErrors("#eventEditForm .event-form-error");
     delete form.dataset.eventId;
   };
-
-  // Function to clear edit form errors
-  function clearEditFormErrors() {
-    const errorElements = document.querySelectorAll(
-      "#eventEditForm .event-form-error"
-    );
-    errorElements.forEach((el) => {
-      el.classList.remove("show");
-      el.textContent = "";
-    });
-  }
 
   // Function to show edit form error
   function showEditFormError(fieldId, message) {
@@ -804,51 +800,6 @@ document.addEventListener("DOMContentLoaded", function () {
       errorEl.classList.add("show");
     }
   }
-
-  // Function to select colour option in edit form
-  function selectEditColourOption(colour) {
-    const colourOptions = document.querySelectorAll(
-      "#editColourOptions .event-form-colour-option"
-    );
-    colourOptions.forEach((option) => {
-      option.classList.remove("selected");
-      const radio = option.querySelector('input[type="radio"]');
-      if (radio && radio.value === colour) {
-        radio.checked = true;
-        option.classList.add("selected");
-      }
-    });
-  }
-
-  // Function to handle recurrence type change in edit form
-  window.handleEditRecurrenceTypeChange = function () {
-    const recurrenceType = document.getElementById("editRecurrenceType").value;
-    const weeklyOptions = document.getElementById(
-      "editWeeklyRecurrenceOptions"
-    );
-    const monthlyOptions = document.getElementById(
-      "editMonthlyRecurrenceOptions"
-    );
-    const endDateOptions = document.getElementById(
-      "editRecurrenceEndDateOptions"
-    );
-
-    // Hide all options first
-    weeklyOptions.style.display = "none";
-    monthlyOptions.style.display = "none";
-    endDateOptions.style.display = "none";
-
-    // Show relevant options based on type
-    if (recurrenceType === "weekly") {
-      weeklyOptions.style.display = "block";
-      endDateOptions.style.display = "block";
-    } else if (recurrenceType === "monthly") {
-      monthlyOptions.style.display = "block";
-      endDateOptions.style.display = "block";
-    } else if (recurrenceType === "daily") {
-      endDateOptions.style.display = "block";
-    }
-  };
 
   // Function to load friends for edit invite selection
   async function loadFriendsForEditInvite(eventId) {
@@ -912,7 +863,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Function to handle edit form submission
   window.handleEventEditSubmit = function (e) {
     e.preventDefault();
-    clearEditFormErrors();
+    clearFormErrors("#eventEditForm .event-form-error");
 
     const form = document.getElementById("eventEditForm");
     const eventId = form.dataset.eventId;
@@ -1065,9 +1016,9 @@ document.addEventListener("DOMContentLoaded", function () {
       });
   };
 
-  // Function to clear form errors
-  function clearFormErrors() {
-    const errorElements = document.querySelectorAll(".event-form-error");
+  // Function to clear form errors (works for both create and edit forms)
+  function clearFormErrors(formSelector = ".event-form-error") {
+    const errorElements = document.querySelectorAll(formSelector);
     errorElements.forEach((el) => {
       el.classList.remove("show");
       el.textContent = "";
@@ -1083,12 +1034,21 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Function to handle recurrence type change
-  window.handleRecurrenceTypeChange = function () {
-    const recurrenceType = document.getElementById("recurrenceType").value;
-    const weeklyOptions = document.getElementById("weeklyRecurrenceOptions");
-    const monthlyOptions = document.getElementById("monthlyRecurrenceOptions");
-    const endDateOptions = document.getElementById("recurrenceEndDateOptions");
+  // Function to handle recurrence type change (works for both create and edit forms)
+  window.handleRecurrenceTypeChange = function (prefix = "") {
+    const prefixStr = prefix ? prefix : "";
+    const recurrenceType = document.getElementById(
+      prefixStr + "recurrenceType"
+    ).value;
+    const weeklyOptions = document.getElementById(
+      prefixStr + "weeklyRecurrenceOptions"
+    );
+    const monthlyOptions = document.getElementById(
+      prefixStr + "monthlyRecurrenceOptions"
+    );
+    const endDateOptions = document.getElementById(
+      prefixStr + "recurrenceEndDateOptions"
+    );
 
     // Hide all options first
     weeklyOptions.style.display = "none";
